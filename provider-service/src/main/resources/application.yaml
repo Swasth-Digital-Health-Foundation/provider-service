@@ -1,0 +1,99 @@
+#kafka config
+bootstrap-servers: ${bootstrap_servers:localhost:9092}
+
+service:
+  mode: ${service_mode:gateway}
+
+registry:
+  basePath: ${registry_basePath:http://localhost:8081}
+
+#postgres config
+postgres:
+  url: ${postgres_db_url:jdbc:postgresql://localhost:5432/mock_service}
+  user: ${postgres_user:postgres}
+  password: ${postgres_password:postgres}
+  table:
+    payerData: ${payer_data_table:payersystem_data}
+    mockParticipant: ${mock_participant_table:mock_participant}
+    beneficiary: ${beneficiary_table:beneficiary_verification}
+    consultation-info : ${consultation_info_table:consultation_info}
+    document-analysis-response : ${document_analysis_response:document_analysis_response}
+    provider-system : ${provider_system:provider_system}
+
+#hcx headers
+protocol:
+  headers:
+    mandatory: ${protocol_mandatory_headers:x-hcx-sender_code, x-hcx-recipient_code, x-hcx-api_call_id, x-hcx-timestamp, x-hcx-status, x-hcx-correlation_id}
+    optional: ${protocol_optional_headers:x-hcx-workflow_id, x-hcx-debug_flag, x-hcx-error_details, x-hcx-debug_details}
+headers:
+  jose: ${jose_headers:alg, enc}
+
+#elasticsearch config
+elasticsearch:
+  url: ${elasticsearch_url:localhost:9200}
+
+#hcx error headers
+plainrequest:
+  headers:
+    mandatory: ${error_mandatory_headers:x-hcx-status, x-hcx-sender_code, x-hcx-recipient_code, x-hcx-error_details}
+    optional: ${error_optional_headers:x-hcx-workflow_id, x-hcx-api_call_id}
+
+#hcx redirect headers
+redirect:
+  headers:
+    mandatory: ${redirect_mandatory_headers:x-hcx-sender_code, x-hcx-recipient_code, x-hcx-api_call_id, x-hcx-timestamp, x-hcx-correlation_id}
+    optional: ${redirect_optional_headers:x-hcx-workflow_id, x-hcx-status, x-hcx-redirect_to}
+
+#hcx base url
+hcx_application:
+  url: ${hcx_gateway_url:http://dev-hcx.swasth.app}
+  api_version: ${version:v0.7}
+  token_url: ${auth_url:${hcx_application.url}/auth/realms/swasth-hcx-participants/protocol/openid-connect/token}
+  registry_url: ${registry:${hcx_application.url}/api/v0.7/participant/search}
+
+
+autoresponse: ${auto_response:false}
+
+request_list:
+  default_limit: ${request_list_default_limit:100}
+  default_latest_data_by_day: ${request_list_default_latest_data_by_day:2}
+
+mock_payer:
+  private_key: ${mock_payer_private_key:https://raw.githubusercontent.com/Swasth-Digital-Health-Foundation/hcx-platform/main/hcx-apis/src/test/resources/examples/test-keys/private-key.pem}
+  username: ${mock_payer_username:payr_demoin_312162@swasth-hcx-dev}
+  password: ${mock_payer_password:Opensaber@123}
+  participant_code: ${mock_payer_participant_code:payr_demomo_383962@swasth-hcx-dev}
+
+redis:
+  host: ${redis_host:localhost}
+  port: ${redis_port:6379}
+  expires: ${redis_expires:432000}  #Redis Cache expires in sec (5 days)
+
+aws:
+  access-key: ${aws_accessKey:}
+  access-secret: ${aws_accessSecret:}
+  region: ${aws_region:}
+
+phone:
+  beneficiary-register : ${phone_beneficiary_register:The OTP for beneficiary app registration is:}
+  communication-content: ${phone_communication_content:The OTP for the communication request is:}
+
+otp:
+  expiry: ${verification_otp_expiry:300000}
+  send-per-minute: ${otp_sent_per_minute:5}
+
+beneficiary:
+  protocol-base-path: ${beneficiary_protocol_base_path:https://dev-hcx.swasth.app/api/v0.8}
+  participant-code: ${beneficiary_sender_code:testprovider1.apollo@swasth-hcx-dev}
+  username: ${beneficiary_username:testprovider1@apollo.com}
+  password: ${beneficiary_password:Opensaber@123}
+  recipient-code: ${beneficiary-config_recipient_code:wemeanhospital+mock_payor.yopmail@swasth-hcx-dev}
+
+payor:
+  username: ${payor_username:wemeanhospital+mock_payor@yopmail.com}
+  password: ${payor_password:i6cA0R0EZHF3@}
+
+aws-url:
+  accessKey: ${url_accessKey:}
+  accessSecret: ${url_accessSecret:}
+  bucketName: ${url_bucketName:}
