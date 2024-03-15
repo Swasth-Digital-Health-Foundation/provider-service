@@ -2,3 +2,5 @@
 target
 .idea/misc.xml
 .idea/compiler.xml
+.idea
+provider-service.iml
