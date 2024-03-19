@@ -1,4 +1,5 @@
 package org.swasth.hcx.v1.controllers;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class UserController {
     @PostMapping("/user/create")
     public ResponseEntity<Object> create(@RequestBody Map<String, Object> requestBody) {
         try {
+            System.out.println("Creating user with request body " + requestBody);
             String mobile = (String) requestBody.getOrDefault("mobile", "");
             String userName = (String) requestBody.getOrDefault("name", "");
             String address = (String) requestBody.getOrDefault("address", "");
@@ -58,6 +60,7 @@ public class UserController {
     @GetMapping("/user/search/{mobile}")
     public ResponseEntity<Object> search(@PathVariable() String mobile) {
         try {
+            System.out.println("Searching user with mobile number " + mobile);
             String query = String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile);
             ResultSet resultSet = postgres.executeQuery(query);
             Map<String, Object> responseMap = new HashMap<>();
