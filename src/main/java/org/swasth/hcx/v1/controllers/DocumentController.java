@@ -56,7 +56,7 @@ public class DocumentController {
     }
 
     @GetMapping("/consultation/{workflow_id}")
-    public ResponseEntity<Object> getConsultationInfo(@PathVariable("workflow_id")  String workflowId) {
+    public ResponseEntity<Object> getConsultationInfo(@PathVariable("workflow_id") String workflowId) {
         try {
             Map<String, Object> consultationInfo = getConsultationInfoByWorkflowId(workflowId);
             if (consultationInfo != null) {
@@ -85,10 +85,11 @@ public class DocumentController {
         }
         return consultationInfo;
     }
-    public Map<String,Object> getResponse(String workflowId , String status){
-        Map<String,Object> responseMap = new HashMap<>();
-        responseMap.put("status" , status);
-        responseMap.put("workflowId" , workflowId);
+
+    public Map<String, Object> getResponse(String workflowId, String status) {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("status", status);
+        responseMap.put("workflowId", workflowId);
         return responseMap;
     }
 

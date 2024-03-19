@@ -119,7 +119,7 @@ public class PayerService {
     public String getPatientName(String fhirPayload) {
         String patientName = "";
         Patient patient = getResourceByType("Patient", Patient.class, fhirPayload);
-        if (patient!= null && patient.getName() != null && !CollectionUtils.isEmpty(patient.getName()) && patient.getName().get(0).getTextElement() != null && patient.getName().get(0).getTextElement().getValue() != null) {
+        if (patient != null && patient.getName() != null && !CollectionUtils.isEmpty(patient.getName()) && patient.getName().get(0).getTextElement() != null && patient.getName().get(0).getTextElement().getValue() != null) {
             patientName = patient.getName().get(0).getTextElement().getValue();
         }
         return patientName;
