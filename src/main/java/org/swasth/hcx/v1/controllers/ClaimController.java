@@ -11,15 +11,11 @@ import org.swasth.hcx.v1.BaseController;
 import java.util.Map;
 
 @RestController
+@RequestMapping(value = "/"+ "${hcx_application.api_version}" +"/claim")
 public class ClaimController extends BaseController {
 
-//    @RequestMapping(value = "/submit", method = RequestMethod.POST)
-//    public ResponseEntity<Object> claimSubmit(@RequestBody Map<String, Object> requestBody) throws Exception {
-//        return processRequest(requestBody, Constants.CLAIM_SUBMIT, Constants.CLAIM_ONSUBMIT, "");
-//    }
-//
-//    @RequestMapping(value = "/on_submit", method = RequestMethod.POST)
-//    public ResponseEntity<Object> claimOnSubmit(@RequestBody Map<String, Object> requestBody) throws Exception {
-//        return processRequest(requestBody, Constants.CLAIM_ONSUBMIT,Constants.CLAIM_ONSUBMIT, "");
-//    }
+    @RequestMapping(value = "/on_submit", method = RequestMethod.POST)
+    public ResponseEntity<Object> claimOnSubmit(@RequestBody Map<String, Object> requestBody) throws Exception {
+        return processAndValidateRequest(requestBody, Constants.CLAIM_SUBMIT,Constants.CLAIM_ONSUBMIT, "");
+    }
 }

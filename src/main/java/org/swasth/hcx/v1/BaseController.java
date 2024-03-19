@@ -26,6 +26,7 @@ import org.swasth.hcx.service.PostgresService;
 import org.swasth.hcx.utils.JSONUtils;
 import org.swasth.hcx.utils.OnActionCall;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -66,7 +67,7 @@ public class BaseController {
             pay.put("payload", String.valueOf(requestBody.get("payload")));
             Map<String, Object> output = new HashMap<>();
             Map<String, Object> outputOfOnAction = new HashMap<>();
-            System.out.println("create the oncheck payload");
+            System.out.println("create the on check payload");
             Bundle bundle = new Bundle();
             Request req = new Request(requestBody, apiAction);
             HCXIntegrator hcxIntegrator = hcxIntegratorService.getHCXIntegrator(req.getRecipientCode());
@@ -86,67 +87,66 @@ public class BaseController {
                 System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
                 // check for the request exist if exist then update
                 updateRecords(req);
-                //sending the onaction call
-//                onActionCall.sendOnAction(request.getRecipientCode(),(String) output.get("fhirPayload") , Operations.COVERAGE_ELIGIBILITY_ON_CHECK, String.valueOf(requestBody.get("payload")), "response.complete", outputOfOnAction);
-            } else if (CLAIM_SUBMIT.equalsIgnoreCase(apiAction)) {
+            } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(apiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_SUBMIT, output);
                 if (!result) {
                     validateErrorsAndSendResponse(output, "/claim/on_submit");
-                }else{
+                } else {
                     //processing the decrypted incoming bundle
                     bundle = parser.parseResource(Bundle.class, (String) output.get("fhirPayload"));
                     System.out.println("Received URL " + bundle.getMeta().getProfile().get(0).getValue().toString());
                     System.out.println("Received URL " + "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimRequestBundle.html".equals(bundle.getMeta().getProfile().get(0).getValue().toString()));
-                    if("https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimRequestBundle.html".equals(bundle.getMeta().getProfile().get(0).getValue().toString())) {
+                    if ("https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimRequestBundle.html".equals(bundle.getMeta().getProfile().get(0).getValue().toString())) {
                         ClaimResponse claimRes = OnActionFhirExamples.claimResponseExample();
                         claimRes.setPatient(new Reference("Patient/RVH1003"));
                         replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimResponseBundle.html", Claim.class, new Bundle.BundleEntryComponent().setFullUrl(claimRes.getResourceType() + "/" + claimRes.getId().toString().replace("#", "")).setResource(claimRes));
                         System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
                         sendResponse(apiAction, parser.encodeResourceToString(bundle), (String) output.get("fhirPayload"), Operations.CLAIM_ON_SUBMIT, String.valueOf(requestBody.get("payload")), "response.complete", outputOfOnAction);
-                    }else{
+                    } else {
                         onActionCall.sendOnActionErrorProtocolResponse(output, new ResponseError(ErrorCodes.ERR_INVALID_DOMAIN_PAYLOAD, "Payload does not contain a claim bundle", null), "/claim/on_submit");
                     }
                 }
-            } else if (PRE_AUTH_SUBMIT.equalsIgnoreCase(apiAction)) {
+            } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(apiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_SUBMIT, output);
                 if (!result) {
                     validateErrorsAndSendResponse(output, "/preauth/on_submit");
-                }else {
+                } else {
                     System.out.println("output map after decryption preauth " + output);
                     //processing the decrypted incoming bundle
                     bundle = parser.parseResource(Bundle.class, (String) output.get("fhirPayload"));
-                    if("https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimRequestBundle.html".equals(bundle.getMeta().getProfile().get(0).getValue())) {
+                    if ("https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimRequestBundle.html".equals(bundle.getMeta().getProfile().get(0).getValue())) {
                         ClaimResponse preAuthRes = OnActionFhirExamples.claimResponseExample();
                         preAuthRes.setPatient(new Reference("Patient/RVH1003"));
                         preAuthRes.setUse(ClaimResponse.Use.PREAUTHORIZATION);
                         replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-ClaimResponseBundle.html", Claim.class, new Bundle.BundleEntryComponent().setFullUrl(preAuthRes.getResourceType() + "/" + preAuthRes.getId().toString().replace("#", "")).setResource(preAuthRes));
                         sendResponse(apiAction, parser.encodeResourceToString(bundle), (String) output.get("fhirPayload"), Operations.PRE_AUTH_ON_SUBMIT, String.valueOf(requestBody.get("payload")), "response.complete", outputOfOnAction);
-                    }else{
+                    } else {
                         onActionCall.sendOnActionErrorProtocolResponse(output, new ResponseError(ErrorCodes.ERR_INVALID_DOMAIN_PAYLOAD, "Payload does not contain a claim bundle", null), "/preauth/on_submit");
                     }
                 }
-            } else if (COMMUNICATION_REQUEST.equalsIgnoreCase(apiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COMMUNICATION_REQUEST, output);
-                if (!result) {
-                    System.out.println("Error while processing incoming request: " + output);
-                }
-                System.out.println("output map after decryption communication" + output);
-                System.out.println("decryption successful");
-                String selectQuery = String.format("SELECT otp_verification from %s WHERE action = 'claim' AND correlation_id = '%s'", providerService, request.getCorrelationId());
-                ResultSet resultSet = postgresService.executeQuery(selectQuery);
-                String otpVerification = "";
-                while (resultSet.next()) {
-                    otpVerification = resultSet.getString("otp_verification");
-                }
-                if (StringUtils.equalsIgnoreCase(otpVerification, "successful")) {
-                    String query1 = String.format("UPDATE %s SET bank_details = '%s' WHERE correlation_id = '%s'", providerService, "initiated", request.getCorrelationId());
-                    postgresService.execute(query1);
-                } else if (StringUtils.equalsIgnoreCase(otpVerification, "Pending")) {
-                    String query = String.format("UPDATE %s SET otp_verification = '%s' WHERE correlation_id ='%s'", providerService, "initiated", request.getCorrelationId());
-                    postgresService.execute(query);
-                }
-                sendResponse(apiAction, parser.encodeResourceToString(bundle), (String) output.get("fhirPayload"), Operations.COMMUNICATION_ON_REQUEST, String.valueOf(requestBody.get("payload")), "response.complete", outputOfOnAction);
             }
+//            } else if (COMMUNICATION_REQUEST.equalsIgnoreCase(apiAction)) {
+//                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COMMUNICATION_REQUEST, output);
+//                if (!result) {
+//                    System.out.println("Error while processing incoming request: " + output);
+//                }
+//                System.out.println("output map after decryption communication" + output);
+//                System.out.println("decryption successful");
+//                String selectQuery = String.format("SELECT otp_verification from %s WHERE action = 'claim' AND correlation_id = '%s'", providerService, request.getCorrelationId());
+//                ResultSet resultSet = postgresService.executeQuery(selectQuery);
+//                String otpVerification = "";
+//                while (resultSet.next()) {
+//                    otpVerification = resultSet.getString("otp_verification");
+//                }
+//                if (StringUtils.equalsIgnoreCase(otpVerification, "successful")) {
+//                    String query1 = String.format("UPDATE %s SET bank_details = '%s' WHERE correlation_id = '%s'", providerService, "initiated", request.getCorrelationId());
+//                    postgresService.execute(query1);
+//                } else if (StringUtils.equalsIgnoreCase(otpVerification, "Pending")) {
+//                    String query = String.format("UPDATE %s SET otp_verification = '%s' WHERE correlation_id ='%s'", providerService, "initiated", request.getCorrelationId());
+//                    postgresService.execute(query);
+//                }
+//                sendResponse(apiAction, parser.encodeResourceToString(bundle), (String) output.get("fhirPayload"), Operations.COMMUNICATION_ON_REQUEST, String.valueOf(requestBody.get("payload")), "response.complete", outputOfOnAction);
+//            }
         }
     }
 
@@ -207,8 +207,8 @@ public class BaseController {
         }
     }
 
-    protected void validateErrorsAndSendResponse(Map<String,Object> output, String url) throws Exception{
-        Map<String,Object> errorObj = (Map<String, Object>) output.get("responseObj");
+    protected void validateErrorsAndSendResponse(Map<String, Object> output, String url) throws Exception {
+        Map<String, Object> errorObj = (Map<String, Object>) output.get("responseObj");
         System.out.println("Error occured during decryption : " + errorObj.get("error"));
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> map = mapper.readValue((String) errorObj.get("error"), Map.class);
@@ -233,6 +233,7 @@ public class BaseController {
             return new ResponseEntity<>(errorResponse(response, ErrorCodes.INTERNAL_SERVER_ERROR, e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     protected Response errorResponse(Response response, ErrorCodes code, java.lang.Exception e) {
         ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
         response.setError(error);
@@ -252,6 +253,19 @@ public class BaseController {
             System.out.println("error   " + e);
             return exceptionHandler(response, e);
         }
+    }
+
+    public Map<String,Object> getConfig(String code, String username, String password, String privateKey) throws IOException {
+        Map<String, Object> configMap = new HashMap<>();
+        configMap.put("protocolBasePath", env.getProperty("hcx_application.url") + "/api/" + env.getProperty("hcx_application.api_version"));
+        configMap.put("participantCode", code);
+        configMap.put("authBasePath", env.getProperty("hcx_application.token_url"));
+        configMap.put("username", username);
+        configMap.put("password", password);
+        configMap.put("encryptionPrivateKey", privateKey);
+        configMap.put("fhirValidationEnabled", true);
+        configMap.put("signingPrivateKey", privateKey);
+        return configMap;
     }
 
 }
