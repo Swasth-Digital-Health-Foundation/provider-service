@@ -64,6 +64,12 @@ mock_payer:
   password: ${mock_payer_password:Opensaber@123}
   participant_code: ${mock_payer_participant_code:payr_demomo_383962@swasth-hcx-dev}
 
+provider:
+  private_key: ${provider_private_key:https://raw.githubusercontent.com/Swasth-Digital-Health-Foundation/hcx-platform/main/hcx-apis/src/test/resources/examples/test-keys/private-key.pem}
+  username: ${provider_username:}
+  password: ${provider_password:}
+  participant_code: ${provider_participant_code:}
+
 redis:
   host: ${redis_host:localhost}
   port: ${redis_port:6379}
