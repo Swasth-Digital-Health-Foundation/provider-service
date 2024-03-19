@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.swasth.hcx.dto.Response;
 import org.swasth.hcx.dto.ResponseError;
 import org.swasth.hcx.exception.ClientException;
@@ -30,6 +31,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.swasth.hcx.utils.Constants.*;
 
@@ -44,6 +46,9 @@ public class ProviderService {
 
     @Autowired
     private PostgresService postgres;
+
+    @Value("${postgres.table.consultation-info}")
+    private String consultationInfoTable;
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
     public ResponseEntity<Object> createCoverageEligibilityRequest(Map<String, Object> requestBody, Operations operations) {
@@ -89,7 +94,7 @@ public class ProviderService {
             String reqFhir = parser.encodeResourceToString(bundleTest);
             boolean outgoingRequest = hcxIntegrator.processOutgoingRequest(reqFhir, operations, recipientCode, apiCallId, correlationId, workflowId, new HashMap<>(), output);
             if (!outgoingRequest) {
-               throw new ClientException("Exception while generating the coverage eligibility request");
+                throw new ClientException("Exception while generating the coverage eligibility request");
             }
             insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName);
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
@@ -180,7 +185,7 @@ public class ProviderService {
         String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id,supporting_documents, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d);",
                 providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", Constants.CLAIM, PENDING, correlationId, workflowId, "{}", insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis());
         postgres.execute(query);
-        System.out.println("Inserted the request details into the Database : " +  apiCallId);
+        System.out.println("Inserted the request details into the Database : " + apiCallId);
     }
 
     protected void validateKeys(String field, String value) throws ClientException {
@@ -260,13 +265,4 @@ public class ProviderService {
             }
         }
     }
-
-
-    private String extractError(Map<String,Object> output) throws Exception {
-        Map<String,Object> errorObj = (Map<String, Object>) output.get("responseObj");
-        Map<String, String> map = JSONUtils.deserialize((String) errorObj.get("error"), Map.class);
-        System.out.println("Error map is here \n" + map.get("code") + "\n" + (String) map.get("message"));
-        return map.getOrDefault("message", "");
-    }
-
 }

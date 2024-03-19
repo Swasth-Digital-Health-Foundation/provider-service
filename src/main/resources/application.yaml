@@ -20,29 +20,12 @@ postgres:
     document-analysis-response : ${document_analysis_response:document_analysis_response}
     provider-system : ${provider_system:provider_system}
 
-#hcx headers
-protocol:
-  headers:
-    mandatory: ${protocol_mandatory_headers:x-hcx-sender_code, x-hcx-recipient_code, x-hcx-api_call_id, x-hcx-timestamp, x-hcx-status, x-hcx-correlation_id}
-    optional: ${protocol_optional_headers:x-hcx-workflow_id, x-hcx-debug_flag, x-hcx-error_details, x-hcx-debug_details}
-headers:
-  jose: ${jose_headers:alg, enc}
 
 #elasticsearch config
 elasticsearch:
   url: ${elasticsearch_url:localhost:9200}
 
-#hcx error headers
-plainrequest:
-  headers:
-    mandatory: ${error_mandatory_headers:x-hcx-status, x-hcx-sender_code, x-hcx-recipient_code, x-hcx-error_details}
-    optional: ${error_optional_headers:x-hcx-workflow_id, x-hcx-api_call_id}
 
-#hcx redirect headers
-redirect:
-  headers:
-    mandatory: ${redirect_mandatory_headers:x-hcx-sender_code, x-hcx-recipient_code, x-hcx-api_call_id, x-hcx-timestamp, x-hcx-correlation_id}
-    optional: ${redirect_optional_headers:x-hcx-workflow_id, x-hcx-status, x-hcx-redirect_to}
 
 #hcx base url
 hcx_application:
