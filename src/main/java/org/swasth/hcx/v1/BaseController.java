@@ -75,7 +75,7 @@ public class BaseController {
                 // check for the request exist if exist then update
                 updateTheIncomingRequest(req, "");
             } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_SUBMIT, output);
+                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_ON_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
@@ -84,7 +84,7 @@ public class BaseController {
                 System.out.println("Output map after decrypting claim request :" + output.get("fhirPayload"));
                 updateTheIncomingRequest(req, approvedAmount);
             } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_SUBMIT, output);
+                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_ON_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting pre auth incoming request :" + req.getCorrelationId());
