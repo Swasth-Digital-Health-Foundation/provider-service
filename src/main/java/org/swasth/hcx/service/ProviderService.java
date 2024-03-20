@@ -181,7 +181,7 @@ public class ProviderService {
     }
 
     private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName) throws ClientException {
-        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id,supporting_documents, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s');",
+        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id,supporting_documents, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s');",
                 providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", Constants.CLAIM, PENDING, correlationId, workflowId, "{}", insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "");
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
