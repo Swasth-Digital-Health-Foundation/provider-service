@@ -277,13 +277,13 @@ public class ProviderService {
         String beneficiaryReferenceId = "";
         try (ResultSet resultSet = postgres.executeQuery(query)) {
             while (resultSet.next()) {
-                beneficiaryReferenceId = resultSet.getString("bsp_reference_id");
+                beneficiaryReferenceId = resultSet.getString("beneficiary_id");
             }
         }
         List<Map<String, Object>> responses = new ArrayList<>();
         for (MultipartFile file : files) {
             String fileName = file.getOriginalFilename();
-            String pathToFile = String.format("beneficiary-app/%s/%s", beneficiaryReferenceId, fileName);
+            String pathToFile = String.format("provider-app/%s/%s", beneficiaryReferenceId, fileName);
             cloudStorageClient.putObject(bucketName, pathToFile, file);
             Map<String, Object> response = new HashMap<>();
             response.put("url", cloudStorageClient.getUrl(bucketName, pathToFile).toString());
