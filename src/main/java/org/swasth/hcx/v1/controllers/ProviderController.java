@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.swasth.hcx.exception.ClientException;
 import org.swasth.hcx.service.ProviderService;
+import org.swasth.hcx.service.RequestListService;
 import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.v1.BaseController;
 
@@ -23,6 +24,9 @@ public class ProviderController extends BaseController {
     @Autowired
     private ProviderService providerService;
 
+    @Autowired
+    private RequestListService requestListService;
+
     @PostMapping(COVERAGE_ELIGIBILITY_CHECK)
     public ResponseEntity<Object> createCoverageEligibility(@RequestHeader HttpHeaders headers, @RequestBody Map<String, Object> requestBody) throws Exception {
         return providerService.createCoverageEligibilityRequest(requestBody, Operations.COVERAGE_ELIGIBILITY_CHECK);
@@ -30,12 +34,12 @@ public class ProviderController extends BaseController {
 
     @PostMapping(CLAIM_SUBMIT)
     public ResponseEntity<Object> createClaimSubmit(@RequestBody Map<String, Object> requestBody) {
-        return providerService.createClaimRequest(requestBody, Operations.CLAIM_SUBMIT);
+        return providerService.createClaimRequest(requestBody, Operations.CLAIM_SUBMIT, CLAIM);
     }
 
     @PostMapping(PRE_AUTH_SUBMIT)
     public ResponseEntity<Object> createPreAuthSubmit(@RequestBody Map<String, Object> requestBody) {
-        return providerService.createClaimRequest(requestBody, Operations.PRE_AUTH_SUBMIT);
+        return providerService.createClaimRequest(requestBody, Operations.PRE_AUTH_SUBMIT, PRE_AUTH);
     }
 
     @PostMapping(COVERAGE_ELIGIBILITY_ONCHECK)
@@ -53,20 +57,20 @@ public class ProviderController extends BaseController {
         return processAndValidateRequest(requestBody, PRE_AUTH_SUBMIT, PRE_AUTH_ONSUBMIT);
     }
 
-//    @PostMapping(REQUEST_LIST)
-//    public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) {
-//        try {
-//            if (requestBody.containsKey("mobile")) {
-//                return beneficiaryService.getRequestListFromDatabase(requestBody);
-//            } else if (requestBody.containsKey("workflow_id")) {
-//                return beneficiaryService.getDataFromWorkflowId(requestBody);
-//            } else if (requestBody.containsKey("sender_code")) {
-//                return beneficiaryService.getRequestListFromSenderCode(requestBody);
-//            } else {
-//                throw new ClientException("Please provide valid request body");
-//            }
-//        } catch (Exception ex) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + ex.getMessage());
-//        }
-//    }
+    @PostMapping(REQUEST_LIST)
+    public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) {
+        try {
+            if (requestBody.containsKey("mobile")) {
+                return requestListService.getRequestListFromDatabase(requestBody);
+            } else if (requestBody.containsKey("workflow_id")) {
+                return requestListService.getDataFromWorkflowId(requestBody);
+            } else if (requestBody.containsKey("sender_code")) {
+                return requestListService.getRequestListFromSenderCode(requestBody);
+            } else {
+                throw new ClientException("Please provide valid request body");
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + ex.getMessage());
+        }
+    }
 }

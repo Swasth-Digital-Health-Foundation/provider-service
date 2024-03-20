@@ -8,6 +8,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.utilities.xhtml.XhtmlDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -51,10 +53,11 @@ public class ProviderService {
     private String consultationInfoTable;
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
+    private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
     public ResponseEntity<Object> createCoverageEligibilityRequest(Map<String, Object> requestBody, Operations operations) {
         Response response = new Response();
         try {
-            System.out.println("----- requestBody ------- " + requestBody);
+            logger.info("Coverage Eligibility request started " + requestBody);
             String participantCode = (String) requestBody.getOrDefault("participantCode", "");
             validateKeys("participantCode", participantCode);
             String password = (String) requestBody.getOrDefault("password", "");
@@ -96,7 +99,7 @@ public class ProviderService {
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the coverage eligibility request");
             }
-            insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName);
+            insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName, COVERAGE_ELIGIBILITY);
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);
         } catch (Exception e) {
@@ -106,7 +109,8 @@ public class ProviderService {
         }
     }
 
-    public ResponseEntity<Object> createClaimRequest(Map<String, Object> requestBody, Operations operations) {
+    public ResponseEntity<Object> createClaimRequest(Map<String, Object> requestBody, Operations operations, String action) {
+        logger.info("Claim or preAuth request started " + requestBody);
         Response response = new Response();
         try {
             String participantCode = (String) requestBody.getOrDefault("participantCode", "");
@@ -169,7 +173,7 @@ public class ProviderService {
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the claim request :");
             }
-            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "");
+            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action);
             System.out.println("The outgoing request has been successfully generated.");
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);
@@ -180,9 +184,9 @@ public class ProviderService {
         }
     }
 
-    private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName) throws ClientException {
+    private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action) throws ClientException {
         String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id,supporting_documents, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s');",
-                providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", Constants.CLAIM, PENDING, correlationId, workflowId, "{}", insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "");
+                providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, "{}", insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "");
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
     }
