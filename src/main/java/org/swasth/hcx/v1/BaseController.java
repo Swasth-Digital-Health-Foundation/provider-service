@@ -21,6 +21,7 @@ import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.fhirexamples.OnActionFhirExamples;
 import org.swasth.hcx.service.HcxIntegratorService;
 import org.swasth.hcx.service.PostgresService;
+import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.utils.JSONUtils;
 
 import java.sql.ResultSet;
@@ -61,9 +62,9 @@ public class BaseController {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COVERAGE_ELIGIBILITY_ON_CHECK, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
-                    throw new ClientException("Exception while decrypting incoming request :" + req.getCorrelationId());
+                    throw new ClientException("Exception while processing incoming request :" + req.getCorrelationId());
                 }
-                System.out.println("output map after decryption  coverageEligibility" + output.get("fhirPayload"));
+                System.out.println("output map after decryption coverageEligibility" + output.get("fhirPayload"));
                 System.out.println("decryption successful");
                 //processing the decrypted incoming bundle
                 bundle = parser.parseResource(Bundle.class, (String) output.get("fhirPayload"));
@@ -72,34 +73,36 @@ public class BaseController {
                 replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CoverageEligibilityResponseBundle.html", CoverageEligibilityRequest.class, new Bundle.BundleEntryComponent().setFullUrl(covRes.getResourceType() + "/" + covRes.getId().toString().replace("#", "")).setResource(covRes));
                 System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
                 // check for the request exist if exist then update
-                updateRecords(req);
+                updateTheIncomingRequest(req, "");
             } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(apiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
                 }
+                String approvedAmount = getAmount((String) output.get("fhirPayload"));
                 System.out.println("Output map after decrypting claim request :" + output.get("fhirPayload"));
-                updateRecords(req);
+                updateTheIncomingRequest(req, approvedAmount);
             } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(apiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting pre auth incoming request :" + req.getCorrelationId());
                 }
+                String approvedAmount = getAmount((String) output.get("fhirPayload"));
                 System.out.println("output map after decryption preauth " + output);
-                updateRecords(req);
+                updateTheIncomingRequest(req, approvedAmount);
             }
         }
     }
 
-    private void updateRecords(Request req) throws ClientException, SQLException {
+    private void updateTheIncomingRequest(Request req, String approvedAmount) throws ClientException, SQLException {
         String query = String.format("SELECT * FROM %s WHERE correlation_id='%s'", providerService, req.getCorrelationId());
         ResultSet resultSet = postgresService.executeQuery(query);
         if (!resultSet.next()) {
             throw new ClientException("The corresponding request does not exist in the database");
         }
-        String query1 = String.format("UPDATE %s SET status = '%s' WHERE correlation_id = '%s'", providerService, req.getStatus(), req.getCorrelationId());
+        String query1 = String.format("UPDATE %s SET status = '%s', approved_amount = '%s', updated_on=%d  WHERE correlation_id = '%s'", providerService, req.getStatus(), approvedAmount, System.currentTimeMillis(), req.getCorrelationId());
         postgresService.execute(query1);
     }
 
@@ -158,5 +161,23 @@ public class BaseController {
             System.out.println("error   " + e);
             return exceptionHandler(response, e);
         }
+    }
+
+    public String getAmount(String fhirPayload) {
+        String amount = "0";
+        Claim claim = getResourceByType(Constants.CLAIM, Claim.class, fhirPayload);
+        if (claim != null && claim.getTotal() != null && claim.getTotal().getValue() != null) {
+            amount = String.valueOf(claim.getTotal().getValue());
+        }
+        return amount;
+    }
+
+    public <T extends Resource> T getResourceByType(String type, Class<T> resourceClass, String fhirPayload) {
+        Bundle parsed = parser.parseResource(Bundle.class, fhirPayload);
+        return parsed.getEntry().stream()
+                .filter(entry -> StringUtils.equalsIgnoreCase(String.valueOf(entry.getResource().getResourceType()), type))
+                .findFirst()
+                .map(entry -> parser.parseResource(resourceClass, parser.encodeResourceToString(entry.getResource())))
+                .orElse(null);
     }
 }
