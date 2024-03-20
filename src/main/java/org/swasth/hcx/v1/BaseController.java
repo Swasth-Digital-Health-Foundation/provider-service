@@ -74,7 +74,7 @@ public class BaseController {
                 System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
                 // check for the request exist if exist then update
                 updateTheIncomingRequest(req, "");
-            } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(apiAction)) {
+            } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
@@ -83,7 +83,7 @@ public class BaseController {
                 String approvedAmount = getAmount((String) output.get("fhirPayload"));
                 System.out.println("Output map after decrypting claim request :" + output.get("fhirPayload"));
                 updateTheIncomingRequest(req, approvedAmount);
-            } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(apiAction)) {
+            } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_SUBMIT, output);
                 if (!result) {
                     System.out.println("Error while processing incoming request: " + output);
