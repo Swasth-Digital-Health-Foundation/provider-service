@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.swasth.hcx.dto.Response;
 import org.swasth.hcx.dto.ResponseError;
 import org.swasth.hcx.exception.ClientException;
@@ -32,6 +33,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,15 +44,16 @@ public class ProviderService {
 
     @Value("${beneficiary.protocol-base-path}")
     private String protocolBasePath;
-
     @Value("${postgres.table.provider-system}")
     private String providerService;
-
-    @Autowired
-    private PostgresService postgres;
-
     @Value("${postgres.table.consultation-info}")
     private String consultationInfoTable;
+    @Value("${aws-url.bucketName}")
+    private String bucketName;
+    @Autowired
+    private PostgresService postgres;
+    @Autowired
+    private CloudStorageClient cloudStorageClient;
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
@@ -97,7 +100,7 @@ public class ProviderService {
             String reqFhir = parser.encodeResourceToString(bundleTest);
             boolean outgoingRequest = hcxIntegrator.processOutgoingRequest(reqFhir, operations, recipientCode, apiCallId, correlationId, workflowId, new HashMap<>(), output);
             if (!outgoingRequest) {
-                throw new ClientException("Exception while generating the coverage eligibility request");
+                throw new ClientException("Exception while generating the coverage eligibility request" + output);
             }
             insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName, COVERAGE_ELIGIBILITY);
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
@@ -267,5 +270,26 @@ public class ProviderService {
                 }
             }
         }
+    }
+
+    public List<Map<String, Object>> getDocumentUrls(List<MultipartFile> files, String mobile) throws ClientException, SQLException, IOException {
+        String query = String.format("SELECT beneficiary_id  FROM %s WHERE mobile = '%s'", "patient_information", mobile);
+        String beneficiaryReferenceId = "";
+        try (ResultSet resultSet = postgres.executeQuery(query)) {
+            while (resultSet.next()) {
+                beneficiaryReferenceId = resultSet.getString("bsp_reference_id");
+            }
+        }
+        List<Map<String, Object>> responses = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String fileName = file.getOriginalFilename();
+            String pathToFile = String.format("beneficiary-app/%s/%s", beneficiaryReferenceId, fileName);
+            cloudStorageClient.putObject(bucketName, pathToFile, file);
+            Map<String, Object> response = new HashMap<>();
+            response.put("url", cloudStorageClient.getUrl(bucketName, pathToFile).toString());
+            response.put("reference_id", beneficiaryReferenceId);
+            responses.add(response);
+        }
+        return responses;
     }
 }
