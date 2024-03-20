@@ -7,12 +7,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.swasth.hcx.exception.ClientException;
 import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.service.RequestListService;
 import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.v1.BaseController;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.swasth.hcx.utils.Constants.*;
@@ -71,6 +73,16 @@ public class ProviderController extends BaseController {
             }
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + ex.getMessage());
+        }
+    }
+
+    @PostMapping(UPLOAD_DOCUMENTS)
+    public ResponseEntity<Object> uploadDocuments(@RequestParam("file") List<MultipartFile> files, @RequestParam("mobile") String mobile) {
+        try {
+            List<Map<String, Object>> responses = providerService.getDocumentUrls(files, mobile);
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
