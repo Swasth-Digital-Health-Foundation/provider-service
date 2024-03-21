@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.swasth.hcx.dto.Response;
 import org.swasth.hcx.dto.ResponseError;
@@ -42,12 +41,10 @@ import static org.swasth.hcx.utils.Constants.*;
 @Service
 public class ProviderService {
 
-    @Value("${beneficiary.protocol-base-path}")
+    @Value("${hcx_application.protocol-base-path}")
     private String protocolBasePath;
     @Value("${postgres.table.provider-system}")
     private String providerService;
-    @Value("${postgres.table.consultation-info}")
-    private String consultationInfoTable;
     @Value("${aws-url.bucketName}")
     private String bucketName;
     @Autowired
@@ -57,6 +54,7 @@ public class ProviderService {
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
+
     public ResponseEntity<Object> createCoverageEligibilityRequest(Map<String, Object> requestBody, Operations operations) {
         Response response = new Response();
         try {
@@ -102,7 +100,7 @@ public class ProviderService {
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the coverage eligibility request" + output);
             }
-            insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName, COVERAGE_ELIGIBILITY);
+            insertRecords(participantCode, recipientCode, "", app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName, COVERAGE_ELIGIBILITY, "ARRAY[]::character varying[]");
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);
         } catch (Exception e) {
@@ -169,14 +167,22 @@ public class ProviderService {
             String apiCallId = UUID.randomUUID().toString();
             String correlationId = UUID.randomUUID().toString();
             String reqFhir = parser.encodeResourceToString(bundleTest);
-//            if (requestBody.containsKey("supportingDocuments")) {
-//                ArrayList<Map<String, Object>> supportingDocuments = JSONUtils.convert(requestBody.get("supportingDocuments"), ArrayList.class);
-//            }
+            List<Map<String, Object>> supportingDocuments = (ArrayList<Map<String, Object>>) requestBody.getOrDefault("supportingDocuments", new ArrayList<>());
+            List<Object> urlList = new ArrayList<>();
+            if (requestBody.containsKey("supportingDocuments")) {
+                for (Map<String, Object> urls : supportingDocuments) {
+                    List<String> url = (List<String>) urls.getOrDefault("urls", "");
+                    urlList.addAll(url);
+                }
+            }
+            String supportingDocumentsUrl = urlList.stream()
+                    .map(document -> "'" + document + "'")
+                    .collect(Collectors.joining(","));
             boolean outgoingRequest = hcxIntegrator.processOutgoingRequest(reqFhir, operations, recipientCode, apiCallId, correlationId, workflowId, new HashMap<>(), output);
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the claim request :");
             }
-            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action);
+            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action, supportingDocumentsUrl.isEmpty() ?  "ARRAY[]::character varying[]" : supportingDocumentsUrl);
             System.out.println("The outgoing request has been successfully generated.");
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);
@@ -187,9 +193,9 @@ public class ProviderService {
         }
     }
 
-    private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action) throws ClientException {
-        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id,supporting_documents, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s');",
-                providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, "{}", insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "");
+    private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
+        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents ) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s]);",
+                providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents);
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
     }
