@@ -38,8 +38,7 @@ public class RequestListService {
                 Map<String, Object> responseMap = new HashMap<>();
                 String actionType = searchResultSet.getString("action");
                 if (actionType.equalsIgnoreCase("claim") || actionType.equalsIgnoreCase("preauth")) {
-                    String supportingDocuments = searchResultSet.getString("supporting_documents");
-                    responseMap.put("supportingDocuments", JSONUtils.deserialize(supportingDocuments, Map.class));
+                    responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
                     responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
                 }
                 responseMap.put("type", actionType);
@@ -89,8 +88,7 @@ public class RequestListService {
                 Map<String, Object> responseMap = new HashMap<>();
                 String actionType = searchResultSet.getString("action");
                 if (actionType.equalsIgnoreCase("claim") || actionType.equalsIgnoreCase("preauth")) {
-                    String supportingDocuments = searchResultSet.getString("supporting_documents");
-                    responseMap.put("supportingDocuments", JSONUtils.deserialize(supportingDocuments, Map.class));
+                    responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
                     responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
                     responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
                 }
@@ -144,8 +142,7 @@ public class RequestListService {
                 responseMap.put("sender_code", searchResultSet.getString("sender_code"));
                 responseMap.put("recipient_code", searchResultSet.getString("recipient_code"));
                 responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
-                String supportingDocuments = searchResultSet.getString("supporting_documents");
-                responseMap.put("supportingDocuments", JSONUtils.deserialize(supportingDocuments, Map.class));
+                responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
                 responseMap.put("mobile", searchResultSet.getString("mobile"));
                 responseMap.put("patientName", searchResultSet.getString("patient_name"));
                 entries.add(responseMap);
