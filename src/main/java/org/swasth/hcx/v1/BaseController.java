@@ -170,7 +170,7 @@ public class BaseController {
         String amount = "0";
         ClaimResponse claimResponse = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
         if (claimResponse != null && claimResponse.getTotal() != null && claimResponse.getTotal().get(0) != null) {
-            amount = String.valueOf(claimResponse.getTotal().get(0).getAmount());
+            amount = String.valueOf(claimResponse.getTotal().get(0).getAmount().getValue());
         }
         return amount;
     }
