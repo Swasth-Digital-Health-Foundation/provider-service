@@ -64,10 +64,11 @@ public class BaseController {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while processing incoming request :" + req.getCorrelationId());
                 }
-                System.out.println("output map after decryption coverageEligibility" + output.get("fhirPayload"));
+                String decryptedFhirPayload = (String) output.get("fhirPayload");
+                System.out.println("output map after decryption coverageEligibility" + decryptedFhirPayload);
                 System.out.println("decryption successful");
                 //processing the decrypted incoming bundle
-                bundle = parser.parseResource(Bundle.class, (String) output.get("fhirPayload"));
+                bundle = parser.parseResource(Bundle.class, decryptedFhirPayload);
                 CoverageEligibilityResponse covRes = OnActionFhirExamples.coverageEligibilityResponseExample();
                 covRes.setPatient(new Reference("Patient/RVH1003"));
                 replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CoverageEligibilityResponseBundle.html", CoverageEligibilityRequest.class, new Bundle.BundleEntryComponent().setFullUrl(covRes.getResourceType() + "/" + covRes.getId().toString().replace("#", "")).setResource(covRes));
@@ -80,8 +81,9 @@ public class BaseController {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
                 }
-                String approvedAmount = getAmount((String) output.get("fhirPayload"));
-                System.out.println("Output map after decrypting claim request :" + output.get("fhirPayload"));
+                String decryptedFhirPayload = (String) output.get("fhirPayload");
+                String approvedAmount = getAmount(decryptedFhirPayload);
+                System.out.println("Output map after decrypting claim request :" + decryptedFhirPayload);
                 updateTheIncomingRequest(req, approvedAmount);
             } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_ON_SUBMIT, output);
@@ -89,7 +91,8 @@ public class BaseController {
                     System.out.println("Error while processing incoming request: " + output);
                     throw new ClientException("Exception while decrypting pre auth incoming request :" + req.getCorrelationId());
                 }
-                String approvedAmount = getAmount((String) output.get("fhirPayload"));
+                String decryptedFhirPayload = (String) output.get("fhirPayload");
+                String approvedAmount = getAmount(decryptedFhirPayload);
                 System.out.println("output map after decryption preauth " + output);
                 updateTheIncomingRequest(req, approvedAmount);
             }
