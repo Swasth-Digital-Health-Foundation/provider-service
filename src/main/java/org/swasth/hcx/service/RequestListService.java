@@ -40,6 +40,7 @@ public class RequestListService {
                 if (actionType.equalsIgnoreCase("claim") || actionType.equalsIgnoreCase("preauth")) {
                     responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
                     responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
+                    responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
                 }
                 responseMap.put("type", actionType);
                 responseMap.put("status", searchResultSet.getString("status"));
@@ -145,6 +146,7 @@ public class RequestListService {
                 responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
                 responseMap.put("mobile", searchResultSet.getString("mobile"));
                 responseMap.put("patientName", searchResultSet.getString("patient_name"));
+                responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
                 entries.add(responseMap);
             }
             resp.put("entries", entries);
