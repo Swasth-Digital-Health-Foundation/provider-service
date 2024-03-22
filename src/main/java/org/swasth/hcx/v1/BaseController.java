@@ -168,9 +168,9 @@ public class BaseController {
 
     public String getAmount(String fhirPayload) {
         String amount = "0";
-        Claim claim = getResourceByType(Constants.CLAIM, Claim.class, fhirPayload);
-        if (claim != null && claim.getTotal() != null && claim.getTotal().getValue() != null) {
-            amount = String.valueOf(claim.getTotal().getValue());
+        ClaimResponse claimResponse = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
+        if (claimResponse != null && claimResponse.getTotal() != null && claimResponse.getTotal().get(0) != null) {
+            amount = String.valueOf(claimResponse.getTotal().get(0).getAmount());
         }
         return amount;
     }
