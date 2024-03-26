@@ -15,6 +15,7 @@ import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.utils.JSONUtils;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -59,10 +60,8 @@ public class UserController {
 
     @GetMapping("/user/search/{mobile}")
     public ResponseEntity<Object> search(@PathVariable() String mobile) {
-        try {
+        try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
             System.out.println("Searching user with mobile number " + mobile);
-            String query = String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile);
-            ResultSet resultSet = postgres.executeQuery(query);
             Map<String, Object> responseMap = new HashMap<>();
             while (resultSet.next()) {
                 responseMap.put("userName", resultSet.getString("name"));
