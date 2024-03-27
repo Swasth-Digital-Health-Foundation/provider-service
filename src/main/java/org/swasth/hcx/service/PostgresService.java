@@ -29,13 +29,14 @@ public class PostgresService {
     }
 
     public Connection getConnection() throws ClientException {
-        Connection conn;
         try {
-            conn = DriverManager.getConnection(url, user, password);
-        } catch (Exception e) {
+            if (connection == null || connection.isClosed()) {
+                connection = DriverManager.getConnection(url, user, password);
+            }
+            return connection;
+        } catch (SQLException e) {
             throw new ClientException("Error connecting to the PostgreSQL server: " + e.getMessage());
         }
-        return conn;
     }
 
     public void close() throws SQLException {

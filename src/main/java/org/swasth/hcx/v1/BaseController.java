@@ -6,6 +6,8 @@ import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -21,33 +23,33 @@ import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.fhirexamples.OnActionFhirExamples;
 import org.swasth.hcx.service.HcxIntegratorService;
 import org.swasth.hcx.service.PostgresService;
-import org.swasth.hcx.utils.Constants;
+import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.utils.JSONUtils;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.swasth.hcx.utils.Constants.*;
 
 public class BaseController {
 
     @Value("${postgres.table.provider-system}")
-    private String providerService;
+    private String providerServiceTable;
     @Autowired
     protected HcxIntegratorService hcxIntegratorService;
     @Autowired
-    private PostgresService postgresService;
+    private PostgresService postgres;
     @Autowired
     protected Environment env;
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
+    private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
+
     protected void processAndValidateRequest(String onApiAction, Map<String, Object> requestBody, String apiAction) throws Exception {
         String mid = UUID.randomUUID().toString();
         String serviceMode = env.getProperty(SERVICE_MODE);
+        System.out.println("The API Action ----" + apiAction);
         System.out.println("\n" + "Mode: " + serviceMode + " :: mid: " + mid + " :: Event: " + onApiAction);
         if (StringUtils.equalsIgnoreCase(serviceMode, GATEWAY)) {
             Map<String, String> pay = new HashMap<>();
@@ -61,12 +63,11 @@ public class BaseController {
             if (COVERAGE_ELIGIBILITY_ONCHECK.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COVERAGE_ELIGIBILITY_ON_CHECK, output);
                 if (!result) {
-                    System.out.println("Error while processing incoming request: " + output);
+                    logger.error("Error while processing incoming request: {} ", output);
                     throw new ClientException("Exception while processing incoming request :" + req.getCorrelationId());
                 }
                 String decryptedFhirPayload = (String) output.get("fhirPayload");
-                System.out.println("output map after decryption coverageEligibility" + decryptedFhirPayload);
-                System.out.println("decryption successful");
+                logger.info("output map after decryption coverageEligibility : {} ", decryptedFhirPayload);
                 //processing the decrypted incoming bundle
                 bundle = parser.parseResource(Bundle.class, decryptedFhirPayload);
                 CoverageEligibilityResponse covRes = OnActionFhirExamples.coverageEligibilityResponseExample();
@@ -78,35 +79,62 @@ public class BaseController {
             } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_ON_SUBMIT, output);
                 if (!result) {
-                    System.out.println("Error while processing incoming request: " + output);
+                    logger.error("Error while processing incoming request: {} ", output);
                     throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
                 }
                 String decryptedFhirPayload = (String) output.get("fhirPayload");
                 String approvedAmount = getAmount(decryptedFhirPayload);
-                System.out.println("Output map after decrypting claim request :" + decryptedFhirPayload);
+                logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
                 updateTheIncomingRequest(req, approvedAmount);
             } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
                 boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_ON_SUBMIT, output);
                 if (!result) {
-                    System.out.println("Error while processing incoming request: " + output);
+                    logger.error("Error while processing incoming request: {} ", output);
                     throw new ClientException("Exception while decrypting pre auth incoming request :" + req.getCorrelationId());
                 }
                 String decryptedFhirPayload = (String) output.get("fhirPayload");
                 String approvedAmount = getAmount(decryptedFhirPayload);
-                System.out.println("output map after decryption preauth " + output);
+                logger.info("output map after decryption pre auth:  {} ", output);
                 updateTheIncomingRequest(req, approvedAmount);
+            } else if (COMMUNICATION_REQUEST.equalsIgnoreCase(apiAction)) {
+                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COMMUNICATION_REQUEST, output);
+                if (!result) {
+                    logger.error("Error while processing incoming request: " + output);
+                    throw new ClientException("Exception while decrypting communication incoming request :" + req.getCorrelationId());
+                }
+                logger.info("output map after decryption communication" + output);
+                String selectQuery = String.format("SELECT otp_status from %s WHERE action = 'claim' AND correlation_id = '%s'", providerServiceTable, req.getCorrelationId());
+                ResultSet resultSet = postgres.executeQuery(selectQuery);
+                String otpStatus = "";
+                while (resultSet.next()) {
+                    otpStatus = resultSet.getString("otp_status");
+                }
+                if (StringUtils.equalsIgnoreCase(otpStatus, "successful")) {
+                    updateBasedOnType("otp_status", req.getCorrelationId());
+                } else if (StringUtils.equalsIgnoreCase(otpStatus, "Pending")) {
+                    updateBasedOnType("bank_status", req.getCorrelationId());
+                }
+                logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
             }
         }
     }
 
+    private void updateBasedOnType(String type , String correlationId) throws ClientException {
+        String update = String.format("UPDATE %s SET %s = '%s' WHERE correlation_id ='%s'", providerServiceTable, type, "initiated", correlationId);
+        postgres.execute(update);
+    }
     private void updateTheIncomingRequest(Request req, String approvedAmount) throws ClientException, SQLException {
-        String query = String.format("SELECT * FROM %s WHERE correlation_id='%s'", providerService, req.getCorrelationId());
-        ResultSet resultSet = postgresService.executeQuery(query);
-        if (!resultSet.next()) {
-            throw new ClientException("The corresponding request does not exist in the database");
+        try {
+            String getByCorrelationId = String.format("SELECT * FROM %s WHERE correlation_id='%s'", providerServiceTable, req.getCorrelationId());
+            ResultSet resultSet = postgres.executeQuery(getByCorrelationId);
+            if (!resultSet.next()) {
+                throw new ClientException("The corresponding request does not exist in the database");
+            }
+            String updateStatus = String.format("UPDATE %s SET status = '%s', approved_amount = '%s', updated_on=%d  WHERE correlation_id = '%s'", providerServiceTable, req.getStatus(), approvedAmount, System.currentTimeMillis(), req.getCorrelationId());
+            postgres.execute(updateStatus);
+        } catch (Exception e) {
+            throw new ClientException("Error while updating the record  : " + e.getMessage());
         }
-        String query1 = String.format("UPDATE %s SET status = '%s', approved_amount = '%s', updated_on=%d  WHERE correlation_id = '%s'", providerService, req.getStatus(), approvedAmount, System.currentTimeMillis(), req.getCorrelationId());
-        postgresService.execute(query1);
     }
 
 

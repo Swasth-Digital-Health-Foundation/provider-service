@@ -1,5 +1,7 @@
 package org.swasth.hcx.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,11 +22,14 @@ public class RequestListService {
     @Autowired
     PostgresService postgresService;
 
+    private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
+
     @Value("${postgres.table.provider-system}")
     private String providerSystem;
 
     public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) {
         String mobile = (String) requestBody.getOrDefault("mobile", "");
+        logger.info("The request list for mobile {}", mobile );
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
         String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, mobile, app);
@@ -34,7 +39,6 @@ public class RequestListService {
                 if (!groupedEntries.containsKey(workflowId)) {
                     groupedEntries.put(workflowId, new ArrayList<>());
                 }
-                System.out.println("grouped entries size of mobile "  + groupedEntries.size());
                 Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
                 groupedEntries.get(workflowId).add(responseMap);
             }
@@ -45,8 +49,9 @@ public class RequestListService {
         }
     }
 
-    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody) {
+    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody) throws SQLException {
         String senderCode = (String) requestBody.getOrDefault("sender_code", "");
+        logger.info("The request list for sender code  {}", senderCode );
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
         String searchQuery = String.format("SELECT * FROM %s WHERE sender_code = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, senderCode, app);
@@ -57,7 +62,6 @@ public class RequestListService {
                     groupedEntries.put(workflowId, new ArrayList<>());
                 }
                 Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
-                System.out.println("grouped entries size of sender code "  + groupedEntries.size());
                 groupedEntries.get(workflowId).add(responseMap);
             }
             Map<String, Object> resp = getEntries(groupedEntries);
@@ -68,7 +72,8 @@ public class RequestListService {
         }
     }
 
-    public ResponseEntity<Object> getRequestByWorkflowId(Map<String, Object> requestBody) {
+    public ResponseEntity<Object> getRequestByWorkflowId(Map<String, Object> requestBody) throws SQLException {
+
         String workflowId = (String) requestBody.getOrDefault("workflow_id", "");
         String app = (String) requestBody.getOrDefault("app", "");
         List<Map<String, Object>> entries = new ArrayList<>();

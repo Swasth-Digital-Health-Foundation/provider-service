@@ -13,6 +13,7 @@ postgres:
     consultation-info : ${consultation_info_table:consultation_info}
     provider-system : ${provider_system:provider_system}
     patient-information : ${patient_information:patient_information}
+    beneficiary: ${beneficiary_table:beneficiary_verification}
 
 #hcx base url
 hcx_application:
@@ -34,3 +35,15 @@ aws-url:
   accessKey: ${url_accessKey:}
   accessSecret: ${url_accessSecret:}
   bucketName: ${url_bucketName:}
+
+aws-sns:
+  access-key: ${aws_accessKey:}
+  access-secret: ${aws_accessSecret:}
+  region: ${aws_region:}
+
+phone:
+  beneficiary-register : ${phone_beneficiary_register:The OTP for beneficiary app registration is:}
+  communication-content: ${phone_communication_content:The OTP for the communication request is:}
+
+otp:
+  expiry: ${verification_otp_expiry:300000}
