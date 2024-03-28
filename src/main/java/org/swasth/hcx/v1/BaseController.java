@@ -24,6 +24,7 @@ import org.swasth.hcx.fhirexamples.OnActionFhirExamples;
 import org.swasth.hcx.service.HcxIntegratorService;
 import org.swasth.hcx.service.PostgresService;
 import org.swasth.hcx.service.ProviderService;
+import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.utils.JSONUtils;
 
 import java.sql.ResultSet;
@@ -113,6 +114,7 @@ public class BaseController {
                 } else if (StringUtils.equalsIgnoreCase(otpStatus, "Pending")) {
                     updateBasedOnType("otp_status", req.getCorrelationId());
                 }
+                insertRecords(req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), "", "", "", req.getWorkflowId(), req.getApiCallId(), req.getCorrelationId(), (String) output.get("fhirPayload"), "", "", "communication", "ARRAY[]::character varying[]");
                 logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
             }
         }
@@ -210,4 +212,12 @@ public class BaseController {
                 .map(entry -> parser.parseResource(resourceClass, parser.encodeResourceToString(entry.getResource())))
                 .orElse(null);
     }
+
+    public void insertRecords(String participantCode, String recipientCode, String rawPayload , String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
+        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s');",
+                providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents, PENDING, PENDING);
+        postgres.execute(query);
+        System.out.println("Inserted the request details into the Database : " + apiCallId);
+    }
+
 }
