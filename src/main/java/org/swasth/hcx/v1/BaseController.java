@@ -49,7 +49,6 @@ public class BaseController {
     protected void processAndValidateRequest(String onApiAction, Map<String, Object> requestBody, String apiAction) throws Exception {
         String mid = UUID.randomUUID().toString();
         String serviceMode = env.getProperty(SERVICE_MODE);
-        System.out.println("The API Action ----" + apiAction);
         System.out.println("\n" + "Mode: " + serviceMode + " :: mid: " + mid + " :: Event: " + onApiAction);
         if (StringUtils.equalsIgnoreCase(serviceMode, GATEWAY)) {
             Map<String, String> pay = new HashMap<>();
@@ -110,9 +109,9 @@ public class BaseController {
                     otpStatus = resultSet.getString("otp_status");
                 }
                 if (StringUtils.equalsIgnoreCase(otpStatus, "successful")) {
-                    updateBasedOnType("otp_status", req.getCorrelationId());
-                } else if (StringUtils.equalsIgnoreCase(otpStatus, "Pending")) {
                     updateBasedOnType("bank_status", req.getCorrelationId());
+                } else if (StringUtils.equalsIgnoreCase(otpStatus, "Pending")) {
+                    updateBasedOnType("otp_status", req.getCorrelationId());
                 }
                 logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
             }
