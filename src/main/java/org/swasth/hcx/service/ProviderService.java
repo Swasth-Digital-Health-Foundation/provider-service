@@ -211,7 +211,7 @@ public class ProviderService {
         if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), OTP)) {
             ResponseEntity<Object> responseEntity = verifyOTP(requestBody);
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                processOutgoingCallbackCommunication(requestId, OTP, (String) requestBody.get("otp_code"), "", "", participantCode, password);
+                processOutgoingCallbackCommunication(requestId, "otp_status", (String) requestBody.get("otp_code"), "", "", participantCode, password);
             } else {
                 throw new ClientException(Objects.requireNonNull(responseEntity.getBody()).toString());
             }
@@ -219,7 +219,7 @@ public class ProviderService {
         } else if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), BANK_DETAILS)) {
             String accountNumber = (String) requestBody.getOrDefault(ACCOUNT_NUMBER, "");
             String ifscCode = (String) requestBody.getOrDefault(IFSC_CODE, "");
-            processOutgoingCallbackCommunication(requestId, BANK_DETAILS, "", accountNumber, ifscCode, participantCode, password);
+            processOutgoingCallbackCommunication(requestId, "bank_status", "", accountNumber, ifscCode, participantCode, password);
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         }
         return ResponseEntity.badRequest().body("Unable to update the details to database");
@@ -229,7 +229,7 @@ public class ProviderService {
         Communication communication;
         List<DomainResource> domList = new ArrayList<>();
         HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
-        if (type.equalsIgnoreCase(OTP)) {
+        if (type.equalsIgnoreCase("otp_status")) {
             communication = OnActionFhirExamples.communication();
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
         } else {
@@ -258,6 +258,7 @@ public class ProviderService {
             rawPayload = resultSet1.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
+        updateOtpAndBankStatus(type, correlationId);
         hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
     }
 
@@ -266,6 +267,10 @@ public class ProviderService {
                 providerServiceTable, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents, PENDING, PENDING);
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
+    }
+    public void updateOtpAndBankStatus(String type, String correlationId) throws ClientException {
+        String updateStatus = String.format("UPDATE %s SET %s = 'successful' WHERE correlation_id = '%s'", beneficiaryTable, type, correlationId);
+        postgres.execute(updateStatus);
     }
 
     protected void validateKeys(String field, String value) throws ClientException {
