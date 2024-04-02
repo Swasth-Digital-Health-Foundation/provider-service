@@ -269,7 +269,7 @@ public class ProviderService {
         System.out.println("Inserted the request details into the Database : " + apiCallId);
     }
     public void updateOtpAndBankStatus(String type, String correlationId) throws ClientException {
-        String updateStatus = String.format("UPDATE %s SET %s = 'successful' WHERE correlation_id = '%s'", beneficiaryTable, type, correlationId);
+        String updateStatus = String.format("UPDATE %s SET %s = 'successful' WHERE correlation_id = '%s'", providerServiceTable, type, correlationId);
         postgres.execute(updateStatus);
     }
 
