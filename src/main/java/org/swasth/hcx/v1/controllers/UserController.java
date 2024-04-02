@@ -33,7 +33,7 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
 
 
-    @PostMapping("/user/create")
+    @PostMapping(Constants.USER_CREATE)
     public ResponseEntity<Object> create(@RequestBody Map<String, Object> requestBody) {
         try {
             logger.info("Creating user with request body {}", requestBody);
@@ -46,9 +46,10 @@ public class UserController {
                 throw new ClientException("The mobile number is required");
             }
             String selectQuery = String.format("SELECT * FROM %s WHERE mobile='%s'", "patient_information", mobile);
-            ResultSet resultSet = postgres.executeQuery(selectQuery);
-            if (resultSet.next()) {
-                throw new ClientException("User already registered");
+            try (ResultSet resultSet = postgres.executeQuery(selectQuery)) {
+                if (resultSet.next()) {
+                    throw new ClientException("User already registered");
+                }
             }
             String insertQuery = String.format("INSERT INTO %s (name, beneficiary_id, mobile, address, payor_details, medical_history, created_on, updated_on)" +
                             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d, %d)", "patient_information",
@@ -63,9 +64,11 @@ public class UserController {
         }
     }
 
-    @GetMapping("/user/search/{mobile}")
+
+    @GetMapping(Constants.USER_SEARCH)
     public ResponseEntity<Object> search(@PathVariable() String mobile) {
-        try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
+        String query = String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile);
+        try (ResultSet resultSet = postgres.executeQuery(query)) {
             logger.info("Searching user with mobile number {}", mobile);
             Map<String, Object> responseMap = new HashMap<>();
             while (resultSet.next()) {

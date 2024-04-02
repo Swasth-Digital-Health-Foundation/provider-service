@@ -27,9 +27,9 @@ public class RequestListService {
     @Value("${postgres.table.provider-system}")
     private String providerSystem;
 
-    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) {
+    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) throws SQLException {
         String mobile = (String) requestBody.getOrDefault("mobile", "");
-        logger.info("The request list for mobile {}", mobile );
+        logger.info("The request list for mobile {}", mobile);
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
         String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, mobile, app);
@@ -73,7 +73,6 @@ public class RequestListService {
     }
 
     public ResponseEntity<Object> getRequestByWorkflowId(Map<String, Object> requestBody) throws SQLException {
-
         String workflowId = (String) requestBody.getOrDefault("workflow_id", "");
         String app = (String) requestBody.getOrDefault("app", "");
         List<Map<String, Object>> entries = new ArrayList<>();

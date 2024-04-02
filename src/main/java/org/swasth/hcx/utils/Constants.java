@@ -31,6 +31,8 @@ public class Constants {
     public static final String IFSC_CODE = "ifsc_code";
     public static final String VERIFY_OTP = "verify/otp";
     public static final String UPLOAD_DOCUMENTS  = "/upload/documents";
+    public static final String USER_SEARCH = "/user/search/{mobile}";
+    public static final String USER_CREATE = "/user/create";
     // Claims APIs
     public static final String PRE_AUTH_SUBMIT = "/preauth/submit";
     public static final String PRE_AUTH_ONSUBMIT =  "/preauth/on_submit";
