@@ -74,7 +74,7 @@ public class DocumentController {
         String searchQuery = String.format("SELECT * FROM %s WHERE workflow_id = '%s'", consultationInfoTable, workflowId);
         Map<String, Object> consultationInfo = new HashMap<>();
         try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
-            boolean found = false; // Flag to track if any rows were found
+            boolean found = false;
             while (resultSet.next()) {
                 consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
                 consultationInfo.put("service_type", resultSet.getString("service_type"));

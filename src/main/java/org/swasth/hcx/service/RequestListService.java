@@ -27,36 +27,37 @@ public class RequestListService {
     @Value("${postgres.table.provider-system}")
     private String providerSystem;
 
-    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) throws SQLException {
-        String mobile = (String) requestBody.getOrDefault("mobile", "");
-        logger.info("The request list for mobile {}", mobile);
-        String app = (String) requestBody.getOrDefault("app", "");
-        Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
-        String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, mobile, app);
-        try (ResultSet searchResultSet = postgresService.executeQuery(searchQuery)) {
-            while (!searchResultSet.isClosed() && searchResultSet.next()) {
-                String workflowId = searchResultSet.getString("workflow_id");
-                if (!groupedEntries.containsKey(workflowId)) {
-                    groupedEntries.put(workflowId, new ArrayList<>());
-                }
-                Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
-                groupedEntries.get(workflowId).add(responseMap);
-            }
-            Map<String, Object> resp = getEntries(groupedEntries);
-            return new ResponseEntity<>(resp, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) throws SQLException {
+//        String mobile = (String) requestBody.getOrDefault("mobile", "");
+//        logger.info("The request list for mobile {}", mobile);
+//        String app = (String) requestBody.getOrDefault("app", "");
+//        Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
+//        String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, mobile, app);
+//        try (ResultSet searchResultSet = postgresService.executeQuery(searchQuery)) {
+//            while (!searchResultSet.isClosed() && searchResultSet.next()) {
+//                String workflowId = searchResultSet.getString("workflow_id");
+//                if (!groupedEntries.containsKey(workflowId)) {
+//                    groupedEntries.put(workflowId, new ArrayList<>());
+//                }
+//                Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
+//                groupedEntries.get(workflowId).add(responseMap);
+//            }
+//            Map<String, Object> resp = getEntries(groupedEntries);
+//            return new ResponseEntity<>(resp, HttpStatus.OK);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
-    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody) throws SQLException {
-        String senderCode = (String) requestBody.getOrDefault("sender_code", "");
-        logger.info("The request list for sender code  {}", senderCode );
+    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody, String type) {
+        String filterBy = (String) requestBody.getOrDefault(type, "");
+        logger.info("The request list for {} : {}", type, filterBy);
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
-        String searchQuery = String.format("SELECT * FROM %s WHERE sender_code = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, senderCode, app);
+        String searchQuery = String.format("SELECT * FROM %s WHERE %s = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, type, filterBy, app);
         try (ResultSet searchResultSet = postgresService.executeQuery(searchQuery)) {
-            while (!searchResultSet.isClosed() && searchResultSet.next()) {
+            while (searchResultSet.next()) {
                 String workflowId = searchResultSet.getString("workflow_id");
                 if (!groupedEntries.containsKey(workflowId)) {
                     groupedEntries.put(workflowId, new ArrayList<>());

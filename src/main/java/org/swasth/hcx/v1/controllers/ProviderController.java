@@ -96,11 +96,11 @@ public class ProviderController extends BaseController {
     public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) {
         try {
             if (requestBody.containsKey("mobile")) {
-                return requestListService.getRequestByMobile(requestBody);
+                return requestListService.getRequestBySenderCode(requestBody, "mobile");
             } else if (requestBody.containsKey("workflow_id")) {
                 return requestListService.getRequestByWorkflowId(requestBody);
             } else if (requestBody.containsKey("sender_code")) {
-                return requestListService.getRequestBySenderCode(requestBody);
+                return requestListService.getRequestBySenderCode(requestBody, "sender_code");
             } else {
                 throw new ClientException("Please provide valid request body");
             }
