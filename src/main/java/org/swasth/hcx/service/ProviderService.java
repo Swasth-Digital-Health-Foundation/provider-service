@@ -219,7 +219,7 @@ public class ProviderService {
         } else if(StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "bank_details")){
             String accountNumber = (String) requestBody.getOrDefault("account_number", "");
             String ifscCode = (String) requestBody.getOrDefault("ifsc_code", "");
-            String query = String.format("UPDATE %s SET account_number ='%s',ifsc_code = '%s', bank_details = '%s' WHERE request_id = '%s'", providerServiceTable, accountNumber, ifscCode, "successful", requestId);
+            String query = String.format("UPDATE %s SET account_number ='%s',ifsc_code = '%s', bank_status = '%s' WHERE request_id = '%s'", providerServiceTable, accountNumber, ifscCode, "successful", requestId);
             postgres.execute(query);
             System.out.println("The bank details updated successfully to the request id " + requestId);
             processOutgoingCallbackCommunication("bank_details", requestId, "", accountNumber, ifscCode, participantCode, password);
