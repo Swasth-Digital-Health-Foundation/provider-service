@@ -211,8 +211,6 @@ public class ProviderService {
         if (StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "otp")) {
             ResponseEntity<Object> responseEntity = verifyOTP(requestBody);
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                String query = String.format("UPDATE %s SET otp_verification = '%s' WHERE request_id = '%s'", providerServiceTable, "successful", requestId);
-                postgres.execute(query);
                 processOutgoingCallbackCommunication("otp", requestId, (String) requestBody.get("otp_code"), "", "", participantCode, password);
             } else {
                 throw new ClientException(Objects.requireNonNull(responseEntity.getBody()).toString());
