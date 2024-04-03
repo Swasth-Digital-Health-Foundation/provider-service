@@ -208,28 +208,33 @@ public class ProviderService {
         validateKeys("password", password);
         String recipientCode = (String) requestBody.getOrDefault("recipientCode", "");
         validateKeys("recipientCode", recipientCode);
-        if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), OTP)) {
+        if (StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "otp")) {
             ResponseEntity<Object> responseEntity = verifyOTP(requestBody);
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                processOutgoingCallbackCommunication(requestId, "otp_status", (String) requestBody.get("otp_code"), "", "", participantCode, password);
+                String query = String.format("UPDATE %s SET otp_verification = '%s' WHERE request_id = '%s'", providerServiceTable, "successful", requestId);
+                postgres.execute(query);
+                processOutgoingCallbackCommunication("otp", requestId, (String) requestBody.get("otp_code"), "", "", participantCode, password);
             } else {
                 throw new ClientException(Objects.requireNonNull(responseEntity.getBody()).toString());
             }
             return responseEntity;
-        } else if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), BANK_DETAILS)) {
-            String accountNumber = (String) requestBody.getOrDefault(ACCOUNT_NUMBER, "");
-            String ifscCode = (String) requestBody.getOrDefault(IFSC_CODE, "");
-            processOutgoingCallbackCommunication(requestId, "bank_status", "", accountNumber, ifscCode, participantCode, password);
+        } else if(StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "bank_details")){
+            String accountNumber = (String) requestBody.getOrDefault("account_number", "");
+            String ifscCode = (String) requestBody.getOrDefault("ifsc_code", "");
+            String query = String.format("UPDATE %s SET account_number ='%s',ifsc_code = '%s', bank_details = '%s' WHERE request_id = '%s'", providerServiceTable, accountNumber, ifscCode, "successful", requestId);
+            postgres.execute(query);
+            System.out.println("The bank details updated successfully to the request id " + requestId);
+            processOutgoingCallbackCommunication("bank_details", requestId, "", accountNumber, ifscCode, participantCode, password);
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         }
         return ResponseEntity.badRequest().body("Unable to update the details to database");
     }
 
-    public void processOutgoingCallbackCommunication(String requestId, String type, String otpCode, String accountNumber, String ifscCode, String participantCode, String password) throws Exception {
+    public void processOutgoingCallbackCommunication(String type, String requestId, String otpCode, String accountNumber, String ifscCode, String participantCode, String password) throws Exception {
         Communication communication;
         List<DomainResource> domList = new ArrayList<>();
         HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
-        if (type.equalsIgnoreCase("otp_status")) {
+        if (type.equalsIgnoreCase("otp")) {
             communication = OnActionFhirExamples.communication();
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
         } else {
@@ -237,28 +242,33 @@ public class ProviderService {
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
         }
-        Bundle bundleTest;
+        IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
+        Bundle bundleTest = new Bundle();
         try {
-            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
+            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html",hcxIntegrator);
             System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
         } catch (Exception e) {
             System.out.println("Error message " + e.getMessage());
             throw new ClientException(e.getMessage());
         }
-        String searchCorrelationIdQuery = String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'", providerServiceTable, requestId);
+        String searchCorrelationIdQuery =  String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'",providerServiceTable, requestId);
         ResultSet resultSet = postgres.executeQuery(searchCorrelationIdQuery);
         String correlationId = "";
-        while (resultSet.next()) {
+        while (resultSet.next()){
             correlationId = resultSet.getString("correlation_id");
         }
         String searchActionJweQuery = String.format("SELECT raw_payload from %s where correlation_id = '%s' AND action = 'communication'", providerServiceTable, correlationId);
         ResultSet resultSet1 = postgres.executeQuery(searchActionJweQuery);
         String rawPayload = "";
-        while (resultSet1.next()) {
+        while (resultSet1.next()){
             rawPayload = resultSet1.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
-        updateOtpAndBankStatus(type, correlationId);
+        if(type.equalsIgnoreCase("otp")){
+            updateOtpAndBankStatus("otp_status", correlationId);
+        } else if (type.equalsIgnoreCase("bank_details")) {
+            updateOtpAndBankStatus("bank_status", correlationId);
+        }
         hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
     }
 
