@@ -111,6 +111,8 @@ public class RequestListService {
             responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
             responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
             responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
+            responseMap.put("otpStatus", searchResultSet.getString("otp_status"));
+            responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
         }
         responseMap.put("type", actionType);
         responseMap.put("status", searchResultSet.getString("status"));
@@ -142,6 +144,8 @@ public class RequestListService {
         responseMap.put("mobile", searchResultSet.getString("mobile"));
         responseMap.put("patientName", searchResultSet.getString("patient_name"));
         responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
+        responseMap.put("otpStatus", searchResultSet.getString("otp_status"));
+        responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
         entries.add(responseMap);
     }
 
