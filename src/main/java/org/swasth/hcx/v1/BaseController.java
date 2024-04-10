@@ -107,7 +107,7 @@ public class BaseController {
                 CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
                 String type = cr.getPayload().get(0).getId();
                 System.out.println("Type of the communication Request ----" + type);
-                System.out.println("Payload will be ------" + cr.getPayload());;
+                System.out.println("Payload will be ------" + cr.getPayload().get(0).getContent());
                 if (type.equalsIgnoreCase("otp_verification")) {
                     updateBasedOnType("otp_status", req.getCorrelationId());
                 } else {
@@ -115,7 +115,7 @@ public class BaseController {
                 }
                 System.out.println("The request id -0----" + req.getApiCallId());
                 System.out.println("The correlation id ------" + req.getCorrelationId());
-                insertRecords(req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), "", "", "", req.getWorkflowId(), req.getApiCallId(), req.getCorrelationId(), (String) output.get("fhirPayload"), "", "", "communication", "ARRAY[]::character varying[]");
+                insertRecords(req.getApiCallId(), req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), (String) output.get("fhirPayload"), req.getWorkflowId(), req.getCorrelationId());
                 logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
             }
         }
@@ -215,11 +215,10 @@ public class BaseController {
                 .orElse(null);
     }
 
-    public void insertRecords(String participantCode, String recipientCode, String rawPayload , String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
+    public void insertRecords(String apiCallId, String participantCode, String recipientCode, String rawPayload, String reqFhir, String workflowId, String correlationId) throws ClientException {
         String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s');",
-                providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents, PENDING, PENDING);
+                providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", "communication", PENDING, correlationId, workflowId, "", "", "", "", "", System.currentTimeMillis(), System.currentTimeMillis(), "", "ARRAY[]::character varying[]", PENDING, PENDING);
         postgres.execute(query);
         logger.info("Inserted the request details into the database : {} ", apiCallId);
     }
-
 }
