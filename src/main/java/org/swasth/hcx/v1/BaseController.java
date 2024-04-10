@@ -103,7 +103,8 @@ public class BaseController {
                     throw new ClientException("Exception while decrypting communication incoming request :" + req.getCorrelationId());
                 }
                 logger.info("output map after decryption communication" + output);
-                CommunicationRequest cr = getResourceByType("CommunicationRequest", CommunicationRequest.class, (String) output.get("fhirPayload"));
+                String fhirPayload  = (String) output.getOrDefault("fhirPayload", "");
+                CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
                 String type = cr.getPayload().get(0).getId();
                 System.out.println("Type of the communication Request ----" + type);
                 System.out.println("Payload will be ------" + cr.getPayload());;
