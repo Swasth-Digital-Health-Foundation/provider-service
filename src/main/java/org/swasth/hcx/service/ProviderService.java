@@ -200,44 +200,57 @@ public class ProviderService {
         }
     }
 
-    public ResponseEntity<Object> createCommunicationOnRequest(Map<String, Object> requestBody) throws Exception {
-        String requestId = (String) requestBody.getOrDefault("request_id", "");
-        String participantCode = (String) requestBody.getOrDefault("participantCode", "");
-        validateKeys("participantCode", participantCode);
-        String password = (String) requestBody.getOrDefault("password", "");
-        validateKeys("password", password);
-        String recipientCode = (String) requestBody.getOrDefault("recipientCode", "");
-        validateKeys("recipientCode", recipientCode);
-        if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), OTP)) {
-            ResponseEntity<Object> responseEntity = verifyOTP(requestBody);
-            if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                processOutgoingCallbackCommunication(requestId, OTP, (String) requestBody.get("otp_code"), "", "", participantCode, password);
+    public ResponseEntity<Object> createCommunicationOnRequest(Map<String, Object> requestBody) {
+        try {
+            String requestId = (String) requestBody.getOrDefault("request_id", "");
+            String participantCode = (String) requestBody.getOrDefault("participantCode", "");
+            validateKeys("participantCode", participantCode);
+            String password = (String) requestBody.getOrDefault("password", "");
+            validateKeys("password", password);
+            String recipientCode = (String) requestBody.getOrDefault("recipientCode", "");
+            String mobile = (String) requestBody.getOrDefault("mobile", "");
+            validateKeys("recipientCode", recipientCode);
+            String type = (String) requestBody.getOrDefault("type", "");
+            if (StringUtils.equalsIgnoreCase(type, "otp")) {
+                boolean isValid = processOutgoingCallbackCommunication("otp", requestId, (String) requestBody.get("otp_code"), "", "", participantCode, password, mobile);
+                return validateRequest(isValid);
+            } else if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), BANK_DETAILS)) {
+                String accountNumber = (String) requestBody.getOrDefault(ACCOUNT_NUMBER, "");
+                String ifscCode = (String) requestBody.getOrDefault(IFSC_CODE, "");
+                String query = String.format("UPDATE %s SET account_number ='%s',ifsc_code = '%s', bank_status = '%s' WHERE request_id = '%s'", providerServiceTable, accountNumber, ifscCode, "successful", requestId);
+                postgres.execute(query);
+                logger.info("The bank details updated successfully to the request id : {} ", requestId);
+                boolean isValid = processOutgoingCallbackCommunication("bank_details", requestId, "", accountNumber, ifscCode, participantCode, password, "");
+                return validateRequest(isValid);
             } else {
-                throw new ClientException(Objects.requireNonNull(responseEntity.getBody()).toString());
+                throw new ClientException("Invalid request type");
             }
-            return responseEntity;
-        } else if (StringUtils.equalsIgnoreCase((String) requestBody.get(TYPE), BANK_DETAILS)) {
-            String accountNumber = (String) requestBody.getOrDefault(ACCOUNT_NUMBER, "");
-            String ifscCode = (String) requestBody.getOrDefault(IFSC_CODE, "");
-            processOutgoingCallbackCommunication(requestId, BANK_DETAILS, "", accountNumber, ifscCode, participantCode, password);
-            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
-        return ResponseEntity.badRequest().body("Unable to update the details to database");
     }
 
-    public void processOutgoingCallbackCommunication(String requestId, String type, String otpCode, String accountNumber, String ifscCode, String participantCode, String password) throws Exception {
-        Communication communication;
+
+    private ResponseEntity<Object> validateRequest(boolean isValid) throws ClientException {
+        if (isValid) {
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        } else {
+            throw new ClientException("Unable to send communication on request");
+        }
+    }
+
+    public boolean processOutgoingCallbackCommunication(String type, String requestId, String otpCode, String accountNumber, String ifscCode, String participantCode, String password, String mobile) throws Exception {
+        Communication communication = OnActionFhirExamples.communication();
         List<DomainResource> domList = new ArrayList<>();
         HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
         if (type.equalsIgnoreCase(OTP)) {
-            communication = OnActionFhirExamples.communication();
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(mobile)));
         } else {
-            communication = OnActionFhirExamples.communication();
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
         }
-        Bundle bundleTest;
+        Bundle bundleTest = new Bundle();
         try {
             bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
             System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
@@ -258,7 +271,7 @@ public class ProviderService {
             rawPayload = resultSet1.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
-        hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
     }
 
     public void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
@@ -267,6 +280,13 @@ public class ProviderService {
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
     }
+
+
+    public void updateOtpAndBankStatus(String type, String correlationId) throws ClientException {
+        String updateStatus = String.format("UPDATE %s SET %s = 'successful' WHERE correlation_id = '%s'", providerServiceTable, type, correlationId);
+        postgres.execute(updateStatus);
+    }
+
 
     protected void validateKeys(String field, String value) throws ClientException {
         if (StringUtils.isEmpty(value))

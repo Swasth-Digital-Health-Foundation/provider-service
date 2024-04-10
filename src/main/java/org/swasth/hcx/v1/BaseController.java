@@ -103,27 +103,28 @@ public class BaseController {
                     throw new ClientException("Exception while decrypting communication incoming request :" + req.getCorrelationId());
                 }
                 logger.info("output map after decryption communication" + output);
-                String selectQuery = String.format("SELECT otp_status from %s WHERE action = 'claim' AND correlation_id = '%s'", providerServiceTable, req.getCorrelationId());
-                ResultSet resultSet = postgres.executeQuery(selectQuery);
-                String otpStatus = "";
-                while (resultSet.next()) {
-                    otpStatus = resultSet.getString("otp_status");
-                }
-                if (StringUtils.equalsIgnoreCase(otpStatus, "successful")) {
-                    updateBasedOnType("bank_status", req.getCorrelationId());
-                } else if (StringUtils.equalsIgnoreCase(otpStatus, "Pending")) {
+                CommunicationRequest cr = getResourceByType("CommunicationRequest", CommunicationRequest.class, (String) output.get("fhirPayload"));
+                String type = cr.getPayload().get(0).getId();
+                System.out.println("Type of the communication Request ----" + type);
+                System.out.println("Payload will be ------" + cr.getPayload());;
+                if (type.equalsIgnoreCase("otp_verification")) {
                     updateBasedOnType("otp_status", req.getCorrelationId());
+                } else {
+                    updateBasedOnType("bank_status", req.getCorrelationId());
                 }
+                System.out.println("The request id -0----" + req.getApiCallId());
+                System.out.println("The correlation id ------" + req.getCorrelationId());
                 insertRecords(req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), "", "", "", req.getWorkflowId(), req.getApiCallId(), req.getCorrelationId(), (String) output.get("fhirPayload"), "", "", "communication", "ARRAY[]::character varying[]");
                 logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
             }
         }
     }
 
-    private void updateBasedOnType(String type , String correlationId) throws ClientException {
-        String update = String.format("UPDATE %s SET %s = '%s' WHERE correlation_id ='%s'", providerServiceTable, type, "initiated", correlationId);
+    private void updateBasedOnType(String type, String correlationId) throws ClientException {
+        String update = String.format("UPDATE %s SET %s = '%s' WHERE  action = 'claim' AND correlation_id ='%s'", providerServiceTable, type, "initiated", correlationId);
         postgres.execute(update);
     }
+
     private void updateTheIncomingRequest(Request req, String approvedAmount) throws ClientException, SQLException {
         try {
             String getByCorrelationId = String.format("SELECT * FROM %s WHERE correlation_id='%s'", providerServiceTable, req.getCorrelationId());
@@ -217,7 +218,7 @@ public class BaseController {
         String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s');",
                 providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents, PENDING, PENDING);
         postgres.execute(query);
-        System.out.println("Inserted the request details into the Database : " + apiCallId);
+        logger.info("Inserted the request details into the database : {} ", apiCallId);
     }
 
 }
