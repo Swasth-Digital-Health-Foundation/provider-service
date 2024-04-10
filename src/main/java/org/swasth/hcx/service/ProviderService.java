@@ -250,14 +250,6 @@ public class ProviderService {
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
         }
-        Bundle bundleTest = new Bundle();
-        try {
-            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
-            System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
-        } catch (Exception e) {
-            System.out.println("Error message " + e.getMessage());
-            throw new ClientException(e.getMessage());
-        }
         String searchCorrelationIdQuery = String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'", providerServiceTable, requestId);
         ResultSet resultSet = postgres.executeQuery(searchCorrelationIdQuery);
         String correlationId = "";
@@ -265,13 +257,13 @@ public class ProviderService {
             correlationId = resultSet.getString("correlation_id");
         }
         String searchActionJweQuery = String.format("SELECT raw_payload from %s where correlation_id = '%s' AND action = 'communication'", providerServiceTable, correlationId);
-        ResultSet resultSet1 = postgres.executeQuery(searchActionJweQuery);
+        ResultSet searchResultSet = postgres.executeQuery(searchActionJweQuery);
         String rawPayload = "";
-        while (resultSet1.next()) {
-            rawPayload = resultSet1.getString("raw_payload");
+        while (searchResultSet.next()) {
+            rawPayload = searchResultSet.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
-        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(communication), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
     }
 
     public void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
