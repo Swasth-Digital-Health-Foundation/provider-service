@@ -226,6 +226,7 @@ public class ProviderService {
                 throw new ClientException("Invalid request type");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
     }
@@ -263,7 +264,9 @@ public class ProviderService {
             rawPayload = searchResultSet.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
-        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(communication), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+        boolean isValid = hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(communication), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+        System.out.println("the output map -----------" + outputMap);
+        return isValid;
     }
 
     public void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
