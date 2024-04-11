@@ -249,6 +249,7 @@ public class ProviderService {
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(mobile)));
         } else {
+            communication.getIdentifier().add(new Identifier().setSystem("http://www.providerco.com/communication").setValue("bank_verification"));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
         }
