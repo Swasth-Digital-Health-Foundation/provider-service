@@ -240,61 +240,26 @@ public class ProviderService {
         }
     }
 
-//    public boolean processOutgoingCallbackCommunication(String type, String requestId, String otpCode, String accountNumber, String ifscCode, String participantCode, String password, String mobile) throws Exception {
-//        Communication communication = OnActionFhirExamples.communication();
-//        List<DomainResource> domList = new ArrayList<>();
-//        HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
-//        if (type.equalsIgnoreCase(OTP)) {
-//            communication.getIdentifier().add(new Identifier().setSystem("http://www.providerco.com/communication").setValue("otp_verification"));
-//            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
-//            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(mobile)));
-//        } else {
-//            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
-//            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
-//        }
-//        Bundle bundleTest = new Bundle();
-//        try {
-//            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
-//            System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
-//        } catch (Exception e) {
-//            System.out.println("Error message " + e.getMessage());
-//            throw new ClientException(e.getMessage());
-//        }
-//        String searchCorrelationIdQuery = String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'", providerServiceTable, requestId);
-//        ResultSet resultSet = postgres.executeQuery(searchCorrelationIdQuery);
-//        String correlationId = "";
-//        while (resultSet.next()) {
-//            correlationId = resultSet.getString("correlation_id");
-//        }
-//        String searchActionJweQuery = String.format("SELECT raw_payload from %s where correlation_id = '%s' AND action = 'communication'", providerServiceTable, correlationId);
-//        ResultSet searchResultSet = postgres.executeQuery(searchActionJweQuery);
-//        String rawPayload = "";
-//        while (searchResultSet.next()) {
-//            rawPayload = searchResultSet.getString("raw_payload");
-//        }
-//        Map<String, Object> outputMap = new HashMap<>();
-//        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
-//    }
-
     public boolean processOutgoingCallbackCommunication(String type, String requestId, String otpCode, String accountNumber, String ifscCode, String participantCode, String password, String mobile) throws Exception {
-        CommunicationRequest communicationRequest = OnActionFhirExamples.communicationRequestExample();
+        Communication communication = OnActionFhirExamples.communication();
         List<DomainResource> domList = new ArrayList<>();
         HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
         if (type.equalsIgnoreCase(OTP)) {
-            communicationRequest.getPayload().add((CommunicationRequest.CommunicationRequestPayloadComponent) new CommunicationRequest.CommunicationRequestPayloadComponent().setContent(new StringType(otpCode)).setId("otp_verification"));
-            communicationRequest.getPayload().add(new CommunicationRequest.CommunicationRequestPayloadComponent().setContent(new StringType(mobile)));
+            communication.getIdentifier().add(new Identifier().setSystem("http://www.providerco.com/communication").setValue("otp_verification"));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(mobile)));
         } else {
-            communicationRequest.getPayload().add((CommunicationRequest.CommunicationRequestPayloadComponent) new CommunicationRequest.CommunicationRequestPayloadComponent().setContent(new StringType(accountNumber)).setId("bank_verification"));
-            communicationRequest.getPayload().add(new CommunicationRequest.CommunicationRequestPayloadComponent().setContent(new StringType(ifscCode)));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
         }
-//        Bundle bundleTest = new Bundle();
-//        try {
-//            bundleTest = HCXFHIRUtils.resourceToBundle(communicationRequest, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
-//            System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
-//        } catch (Exception e) {
-//            System.out.println("Error message " + e.getMessage());
-//            throw new ClientException(e.getMessage());
-//        }
+        Bundle bundleTest = new Bundle();
+        try {
+            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html", hcxIntegrator);
+            System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
+        } catch (Exception e) {
+            System.out.println("Error message " + e.getMessage());
+            throw new ClientException(e.getMessage());
+        }
         String searchCorrelationIdQuery = String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'", providerServiceTable, requestId);
         ResultSet resultSet = postgres.executeQuery(searchCorrelationIdQuery);
         String correlationId = "";
@@ -308,8 +273,10 @@ public class ProviderService {
             rawPayload = searchResultSet.getString("raw_payload");
         }
         Map<String, Object> outputMap = new HashMap<>();
-        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(communicationRequest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+        return hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
     }
+
+
 
     public void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
         String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s');",
