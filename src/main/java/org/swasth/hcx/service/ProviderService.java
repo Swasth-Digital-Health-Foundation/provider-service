@@ -245,6 +245,7 @@ public class ProviderService {
         List<DomainResource> domList = new ArrayList<>();
         HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
         if (type.equalsIgnoreCase(OTP)) {
+            communication.getIdentifier().add(new Identifier().setSystem("http://www.providerco.com/communication").setValue("otp_verification"));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
             communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(mobile)));
         } else {
