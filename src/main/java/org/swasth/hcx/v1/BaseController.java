@@ -2,6 +2,7 @@ package org.swasth.hcx.v1;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import org.apache.commons.lang3.StringUtils;
@@ -61,64 +62,73 @@ public class BaseController {
             Request req = new Request(requestBody, apiAction);
             HCXIntegrator hcxIntegrator = hcxIntegratorService.getHCXIntegrator(req.getRecipientCode());
             if (COVERAGE_ELIGIBILITY_ONCHECK.equalsIgnoreCase(onApiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COVERAGE_ELIGIBILITY_ON_CHECK, output);
-                if (!result) {
-                    logger.error("Error while processing incoming request: {} ", output);
-                    throw new ClientException("Exception while processing incoming request :" + req.getCorrelationId());
-                }
-                String decryptedFhirPayload = (String) output.get("fhirPayload");
-                logger.info("output map after decryption coverageEligibility : {} ", decryptedFhirPayload);
-                //processing the decrypted incoming bundle
-                bundle = parser.parseResource(Bundle.class, decryptedFhirPayload);
-                CoverageEligibilityResponse covRes = OnActionFhirExamples.coverageEligibilityResponseExample();
-                covRes.setPatient(new Reference("Patient/RVH1003"));
-                replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CoverageEligibilityResponseBundle.html", CoverageEligibilityRequest.class, new Bundle.BundleEntryComponent().setFullUrl(covRes.getResourceType() + "/" + covRes.getId().toString().replace("#", "")).setResource(covRes));
-                System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
-                // check for the request exist if exist then update
-                updateTheIncomingRequest(req, "");
+                processCoverageEligibility(pay, output, req, hcxIntegrator);
             } else if (CLAIM_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.CLAIM_ON_SUBMIT, output);
-                if (!result) {
-                    logger.error("Error while processing incoming request: {} ", output);
-                    throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
-                }
-                String decryptedFhirPayload = (String) output.get("fhirPayload");
-                String approvedAmount = getAmount(decryptedFhirPayload);
-                logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
-                updateTheIncomingRequest(req, approvedAmount);
+                processPreAuthAndClaim(pay, output, req, hcxIntegrator, Operations.CLAIM_ON_SUBMIT);
             } else if (PRE_AUTH_ONSUBMIT.equalsIgnoreCase(onApiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.PRE_AUTH_ON_SUBMIT, output);
-                if (!result) {
-                    logger.error("Error while processing incoming request: {} ", output);
-                    throw new ClientException("Exception while decrypting pre auth incoming request :" + req.getCorrelationId());
-                }
-                String decryptedFhirPayload = (String) output.get("fhirPayload");
-                String approvedAmount = getAmount(decryptedFhirPayload);
-                logger.info("output map after decryption pre auth:  {} ", output);
-                updateTheIncomingRequest(req, approvedAmount);
+                processPreAuthAndClaim(pay, output, req, hcxIntegrator, Operations.PRE_AUTH_ON_SUBMIT);
             } else if (COMMUNICATION_REQUEST.equalsIgnoreCase(apiAction)) {
-                boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COMMUNICATION_REQUEST, output);
-                if (!result) {
-                    logger.error("Error while processing incoming request: " + output);
-                    throw new ClientException("Exception while decrypting communication incoming request :" + req.getCorrelationId());
-                }
-                logger.info("output map after decryption communication" + output);
-                String fhirPayload  = (String) output.getOrDefault("fhirPayload", "");
-                CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
-                String type = cr.getPayload().get(0).getId();
-                System.out.println("Type of the communication Request ----" + type);
-                System.out.println("Payload will be ------" + cr.getPayload().get(0).getContent());
-                if (type.equalsIgnoreCase("otp_verification")) {
-                    updateBasedOnType("otp_status", req.getCorrelationId());
-                } else {
-                    updateBasedOnType("bank_status", req.getCorrelationId());
-                }
-                System.out.println("The request id -0----" + req.getApiCallId());
-                System.out.println("The correlation id ------" + req.getCorrelationId());
-                insertRecords(req.getApiCallId(), req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), (String) output.get("fhirPayload"), req.getWorkflowId(), req.getCorrelationId());
-                logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
+                processCommunication(pay, output, req, hcxIntegrator);
             }
         }
+    }
+
+    private void processCommunication(Map<String, String> pay, Map<String, Object> output, Request req, HCXIntegrator hcxIntegrator) throws Exception {
+        boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COMMUNICATION_REQUEST, output);
+        if (!result) {
+            logger.error("Error while processing incoming request: " + output);
+            throw new ClientException("Exception while decrypting communication incoming request :" + req.getCorrelationId());
+        }
+        logger.info("output map after decryption communication" + output);
+        String fhirPayload = (String) output.getOrDefault("fhirPayload", "");
+        CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
+        String communicationType = cr.getPayload().get(0).getId();
+        System.out.println("Type of the communication Request ----" + communicationType);
+        System.out.println("Payload will be ------" + cr.getPayload().get(0).getContent());
+        if (communicationType.equalsIgnoreCase("otp_verification")) {
+            updateBasedOnType("otp_status", req.getCorrelationId());
+        } else if (communicationType.equalsIgnoreCase("bank_verification")) {
+            updateBasedOnType("bank_status", req.getCorrelationId());
+        } else if (communicationType.equalsIgnoreCase("otp_response")) {
+            String status = String.valueOf(cr.getPayload().get(0).getContent());
+            System.out.println("the status will be ----" + status);
+            String update = String.format("UPDATE %s SET otp_status = 'successful' WHERE action = 'claim' AND correlation_id ='%s'", providerServiceTable, req.getCorrelationId());
+            postgres.execute(update);
+        }
+        insertRecords(req.getApiCallId(), req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), (String) output.get("fhirPayload"), req.getWorkflowId(), req.getCorrelationId());
+        logger.info("communication request updated for correlation id {} :", req.getCorrelationId());
+    }
+
+
+    private void processPreAuthAndClaim(Map<String, String> pay, Map<String, Object> output, Request req, HCXIntegrator hcxIntegrator, Operations operations) throws Exception {
+        boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), operations, output);
+        if (!result) {
+            logger.error("Error while processing incoming request: {} ", output);
+            throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
+        }
+        String decryptedFhirPayload = (String) output.get("fhirPayload");
+        String approvedAmount = getAmount(decryptedFhirPayload);
+        logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
+        updateTheIncomingRequest(req, approvedAmount);
+    }
+
+    private void processCoverageEligibility(Map<String, String> pay, Map<String, Object> output, Request req, HCXIntegrator hcxIntegrator) throws Exception {
+        Bundle bundle;
+        boolean result = hcxIntegrator.processIncoming(JSONUtils.serialize(pay), Operations.COVERAGE_ELIGIBILITY_ON_CHECK, output);
+        if (!result) {
+            logger.error("Error while processing incoming request: {} ", output);
+            throw new ClientException("Exception while processing incoming request :" + req.getCorrelationId());
+        }
+        String decryptedFhirPayload = (String) output.get("fhirPayload");
+        logger.info("output map after decryption coverageEligibility : {} ", decryptedFhirPayload);
+        //processing the decrypted incoming bundle
+        bundle = parser.parseResource(Bundle.class, decryptedFhirPayload);
+        CoverageEligibilityResponse covRes = OnActionFhirExamples.coverageEligibilityResponseExample();
+        covRes.setPatient(new Reference("Patient/RVH1003"));
+        replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CoverageEligibilityResponseBundle.html", CoverageEligibilityRequest.class, new Bundle.BundleEntryComponent().setFullUrl(covRes.getResourceType() + "/" + covRes.getId().toString().replace("#", "")).setResource(covRes));
+        System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
+        // check for the request exist if exist then update
+        updateTheIncomingRequest(req, "");
     }
 
     private void updateBasedOnType(String type, String correlationId) throws ClientException {
