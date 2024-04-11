@@ -148,6 +148,8 @@ public class RequestListService {
         responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
         responseMap.put("otpStatus", searchResultSet.getString("otp_status"));
         responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
+        responseMap.put("accountNumber", searchResultSet.getString("account_number"));
+        responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
         entries.add(responseMap);
     }
 
