@@ -92,7 +92,7 @@ public class BaseController {
         } else if (communicationType.equalsIgnoreCase("otp_response")) {
             String status = String.valueOf(cr.getPayload().get(0).getContent());
             System.out.println("the status will be ----" + status);
-            String update = String.format("UPDATE %s SET otp_status = 'successful' WHERE action = 'claim' AND correlation_id ='%s'", providerServiceTable, req.getCorrelationId());
+            String update = String.format("UPDATE %s SET otp_status = '%s' WHERE action = 'claim' AND correlation_id ='%s'", providerServiceTable, status, req.getCorrelationId());
             postgres.execute(update);
         }
         insertRecords(req.getApiCallId(), req.getSenderCode(), req.getRecipientCode(), (String) req.getPayload().getOrDefault(Constants.PAYLOAD, ""), (String) output.get("fhirPayload"), req.getWorkflowId(), req.getCorrelationId());
