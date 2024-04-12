@@ -105,6 +105,7 @@ public class BaseController {
             throw new ClientException("Exception while decrypting claim incoming request :" + req.getCorrelationId());
         }
         String decryptedFhirPayload = (String) output.get("fhirPayload");
+        logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
         String approvedAmount = getAmount(decryptedFhirPayload);
         String remarks = getRemarks(decryptedFhirPayload);
         logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
@@ -218,10 +219,10 @@ public class BaseController {
     public String getRemarks(String fhirPayload) {
         String remarks = "";
         ClaimResponse cr = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
-        if (cr != null && cr.getProcessNote() != null && cr.getProcessNote().get(0) != null) {
+        if (cr != null && cr.getProcessNote() != null) {
             remarks = cr.getProcessNote().get(0).getText();
         }
-        System.out.println( "Remarks -----" + remarks);
+        System.out.println("Remarks -----" + remarks);
         return remarks;
     }
 
