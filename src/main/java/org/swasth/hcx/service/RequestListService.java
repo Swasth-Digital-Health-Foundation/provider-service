@@ -115,6 +115,7 @@ public class RequestListService {
             responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
             responseMap.put("accountNumber", searchResultSet.getString("account_number"));
             responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
+            responseMap.put("remarks", searchResultSet.getString("remarks"));
         }
         responseMap.put("type", actionType);
         responseMap.put("status", searchResultSet.getString("status"));
@@ -150,6 +151,7 @@ public class RequestListService {
         responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
         responseMap.put("accountNumber", searchResultSet.getString("account_number"));
         responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
+        responseMap.put("remarks", searchResultSet.getString("remarks"));
         entries.add(responseMap);
     }
 

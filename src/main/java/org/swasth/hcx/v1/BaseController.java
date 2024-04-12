@@ -83,8 +83,6 @@ public class BaseController {
         String fhirPayload = (String) output.getOrDefault("fhirPayload", "");
         CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
         String communicationType = cr.getPayload().get(0).getId();
-        System.out.println("Type of the communication Request ----" + communicationType);
-        System.out.println("Payload will be ------" + cr.getPayload().get(0).getContent());
         if (communicationType.equalsIgnoreCase("otp_verification")) {
             updateBasedOnType("otp_status", req.getCorrelationId());
         } else if (communicationType.equalsIgnoreCase("bank_verification")) {
@@ -108,8 +106,9 @@ public class BaseController {
         }
         String decryptedFhirPayload = (String) output.get("fhirPayload");
         String approvedAmount = getAmount(decryptedFhirPayload);
+        String remarks = getRemarks(decryptedFhirPayload);
         logger.info("Output map after decrypting claim request : {} ", decryptedFhirPayload);
-        updateTheIncomingRequest(req, approvedAmount);
+        updateTheIncomingRequest(req, approvedAmount , remarks);
     }
 
     private void processCoverageEligibility(Map<String, String> pay, Map<String, Object> output, Request req, HCXIntegrator hcxIntegrator) throws Exception {
@@ -128,7 +127,7 @@ public class BaseController {
         replaceResourceInBundleEntry(bundle, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CoverageEligibilityResponseBundle.html", CoverageEligibilityRequest.class, new Bundle.BundleEntryComponent().setFullUrl(covRes.getResourceType() + "/" + covRes.getId().toString().replace("#", "")).setResource(covRes));
         System.out.println("bundle reply " + parser.encodeResourceToString(bundle));
         // check for the request exist if exist then update
-        updateTheIncomingRequest(req, "");
+        updateTheIncomingRequest(req, "", "");
     }
 
     private void updateBasedOnType(String type, String correlationId) throws ClientException {
@@ -136,14 +135,14 @@ public class BaseController {
         postgres.execute(update);
     }
 
-    private void updateTheIncomingRequest(Request req, String approvedAmount) throws ClientException, SQLException {
+    private void updateTheIncomingRequest(Request req, String approvedAmount, String remarks) throws ClientException, SQLException {
         try {
             String getByCorrelationId = String.format("SELECT * FROM %s WHERE correlation_id='%s'", providerServiceTable, req.getCorrelationId());
             ResultSet resultSet = postgres.executeQuery(getByCorrelationId);
             if (!resultSet.next()) {
                 throw new ClientException("The corresponding request does not exist in the database");
             }
-            String updateStatus = String.format("UPDATE %s SET status = '%s', approved_amount = '%s', updated_on=%d  WHERE correlation_id = '%s'", providerServiceTable, req.getStatus(), approvedAmount, System.currentTimeMillis(), req.getCorrelationId());
+            String updateStatus = String.format("UPDATE %s SET status = '%s', approved_amount = '%s', remarks = '%s', updated_on=%d  WHERE correlation_id = '%s'", providerServiceTable, req.getStatus(), approvedAmount, remarks, System.currentTimeMillis(), req.getCorrelationId());
             postgres.execute(updateStatus);
         } catch (Exception e) {
             throw new ClientException("Error while updating the record  : " + e.getMessage());
@@ -209,11 +208,21 @@ public class BaseController {
 
     public String getAmount(String fhirPayload) {
         String amount = "0";
-        ClaimResponse claimResponse = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
-        if (claimResponse != null && claimResponse.getTotal() != null && claimResponse.getTotal().get(0) != null) {
-            amount = String.valueOf(claimResponse.getTotal().get(0).getAmount().getValue());
+        ClaimResponse cr = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
+        if (cr != null && cr.getTotal() != null && cr.getTotal().get(0) != null) {
+            amount = String.valueOf(cr.getTotal().get(0).getAmount().getValue());
         }
         return amount;
+    }
+
+    public String getRemarks(String fhirPayload) {
+        String remarks = "";
+        ClaimResponse cr = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
+        if (cr != null && cr.getProcessNote() != null && cr.getProcessNote().get(0) != null) {
+            remarks = cr.getProcessNote().get(0).getText();
+        }
+        System.out.println( "Remarks -----" + remarks);
+        return remarks;
     }
 
     public <T extends Resource> T getResourceByType(String type, Class<T> resourceClass, String fhirPayload) {
@@ -226,8 +235,8 @@ public class BaseController {
     }
 
     public void insertRecords(String apiCallId, String participantCode, String recipientCode, String rawPayload, String reqFhir, String workflowId, String correlationId) throws ClientException {
-        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s');",
-                providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", "communication", PENDING, correlationId, workflowId, "", "", "", "", "", System.currentTimeMillis(), System.currentTimeMillis(), "", "ARRAY[]::character varying[]", PENDING, PENDING);
+        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status,remarks) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s','%s');",
+                providerServiceTable, apiCallId, participantCode, recipientCode, rawPayload, reqFhir, "", "communication", PENDING, correlationId, workflowId, "", "", "", "", "", System.currentTimeMillis(), System.currentTimeMillis(), "", "ARRAY[]::character varying[]", PENDING, PENDING, "");
         postgres.execute(query);
         logger.info("Inserted the request details into the database : {} ", apiCallId);
     }
