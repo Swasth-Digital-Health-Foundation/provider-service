@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: HCX Mock Service APIs
+  title: HCX Mock & Provider Service API's
   description: >-
     HCX Mockservice
   version: "1.0.0"
@@ -8,14 +8,14 @@ servers:
   - url: "https://api.example.com"
     description: Mock server
 tags:
-  - name: Mock Service APIs
-    description: HCX Mock Service APIs
+  - name: Mock Service API's
+    description: HCX Mock Service API's
 paths:
   /coverageeligibility/check:
     post:
       tags:
-        - Mock Service APIs
-      description: Initiates a request to create a coverage eligibility check.
+        - Provider Service API's
+      description: Generates coverage eligibility FHIR bundle with the given input and sends coverage eligibility requestto the payor.
       security:
         - bearer_auth: []
       requestBody:
@@ -65,8 +65,8 @@ paths:
   /claim/submit:
     post:
       tags:
-        - Mock Service APIs
-      description: Initiates a request to create claim submit
+        - Provider Service API's
+      description: Generates claim FHIR bundle with the given input and sends claim request to the payor.
       security:
         - bearer_auth: []
       requestBody:
@@ -116,8 +116,8 @@ paths:
   /preauth/submit:
     post:
       tags:
-        - Mock Service APIs
-      description: Initiates a request to create a preauth submit.
+        - Provider Service API's
+      description: Generates preauth FHIR bundle with the given input and sends preauth request to the payor.
       security:
         - bearer_auth: []
       requestBody:
@@ -164,10 +164,162 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /coverageeligibility/on_check:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform coverage eligibility on_check
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /claim/on_submit:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform claim on_submit
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /preauth/on_submit:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform preauth on_submit
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /create/communication/request:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to create a communication request
       security:
         - bearer_auth: []
@@ -239,7 +391,7 @@ paths:
   /create/communication/on_request:
     post:
       tags:
-        - Mock Service APIs
+        - Provider Service API's
       description: Initiates a request to create communication on_request
       security:
         - bearer_auth: []
@@ -316,11 +468,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /send/otp:
+    post:
+      tags:
+        - Mock Service API's
+        - Provider Service API's
+      description: This API is used to send an OTP to given mobile number which is used in the consent verification and BSP app login.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    mobile:
+                      type: string
+                      description: Primary mobile number
+                      example: "987654321"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /verify/otp:
     post:
       tags:
-        - Mock Service APIs
-      description: Initiates a request to verify otp
+        - Mock Service API's
+        - Provider Service API's
+      description: This API is used to verify the OTP,which will accept the mobile and otp code as a input and verifies.
       security:
         - bearer_auth: []
       requestBody:
@@ -350,70 +560,14 @@ paths:
                     type: string
                     description: Represents the timestamp in epoch format
                     example: "1706783290"
-                  correlation_id:
+                  mobile:
                     type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
+                    description: Mobile number
+                    example: "9620499129"
+                  verification:
                     type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /send/otp:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to send otp
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              allOf:
-                - type: object
-                  properties:
-                    mobile:
-                      type: string
-                      description: Primary mobile number
-                      example: "987654321"
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+                    description:  verification
+                    example: "successful"
         '400':
           description: Client Error
           content:
@@ -435,8 +589,8 @@ paths:
   /check/communication/request:
     post:
       tags:
-        - Mock Service APIs
-      description: Initiates a request to check communication request
+        - Provider Service API's
+      description: This API is to check the consent verification and bank request intitation is sent by the payor and based on that we will open the consent and bank request details cards
       security:
         - bearer_auth: []
       requestBody:
@@ -491,7 +645,7 @@ paths:
   /upload/documents:
     post:
       tags:
-        - Mock Service APIs
+        - Provider Service API's
       description: Initiates a request to upload documents.
       security:
         - bearer_auth: []
@@ -557,7 +711,7 @@ paths:
   /request/list:
     post:
       tags:
-        - Mock Service APIs
+        - Provider Service API's
       description: Initiates a request to fetch the request list according to input.
       security:
         - bearer_auth: []
@@ -608,210 +762,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /claim/on_submit:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform claim on_submit
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /communication/request:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform communication request
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /communication/on_request:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform communication on_request
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /coverageeligibility/on_check:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform coverage eligibility on_check
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description: Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description: Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   /notification/list:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
+        - Provider Service API's
       description: Initiates a request to fetch the list of notifications according to input
       security:
         - bearer_auth: []
@@ -861,60 +816,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /notification/notify:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform sending notification
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   /consultation/add:
     post:
       tags:
-        - Mock Service APIs
+        - Provider Service API's
       description: Initiates a request to add consultation details
       security:
         - bearer_auth: []
@@ -986,6 +891,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /consultation/{workflow_id}:
     get:
+      tags:
+        - Provider Service API's
       summary: Returns a user details by workflow_id.
       parameters:
         - name: workflow_id
@@ -1046,7 +953,7 @@ paths:
   /payer/request/list:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description:  Initiates a request to list the payer request based on input
       security:
         - bearer_auth: []
@@ -1087,7 +994,7 @@ paths:
   /payer/claim/approve:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to approve the claim request from payer
       security:
         - bearer_auth: []
@@ -1131,7 +1038,7 @@ paths:
   /payer/claim/reject:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description:  Initiates a request to reject claim request from payer
       security:
         - bearer_auth: []
@@ -1175,7 +1082,7 @@ paths:
   /payer/preauth/approve:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to approve preauth request from payer
       security:
         - bearer_auth: []
@@ -1219,7 +1126,7 @@ paths:
   /payer/preauth/reject:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to reject preauth request from payer
       security:
         - bearer_auth: []
@@ -1263,7 +1170,7 @@ paths:
   /payer/response/update:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to update response from payer.
       security:
         - bearer_auth: []
@@ -1315,7 +1222,7 @@ paths:
   /payer/coverageeligibility/approve:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to approve coverage eligibility request from payer
       security:
         - bearer_auth: []
@@ -1359,7 +1266,7 @@ paths:
   /payer/coverageeligibility/reject:
     post:
       tags:
-        - Mock Service APIs
+        - Mock Service API's
       description: Initiates a request to reject coverage eligibility request from payer
       security:
         - bearer_auth: []
@@ -1390,56 +1297,6 @@ paths:
                     type: string
                     description: Unique identifier
                     example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /preauth/on_submit:
-    post:
-      tags:
-        - Mock Service APIs
-      description: Initiates a request to perform preauth on_submit
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description: Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description: Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
         '400':
           description: Client Error
           content:
@@ -1828,4 +1685,3 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
