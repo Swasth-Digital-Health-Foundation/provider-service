@@ -164,158 +164,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /coverageeligibility/on_check:
-    post:
-      tags:
-        - Mock Service API's
-      description: Initiates a request to perform coverage eligibility on_check
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description: Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description: Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /claim/on_submit:
-    post:
-      tags:
-        - Mock Service API's
-      description: Initiates a request to perform claim on_submit
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description:  Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description:  Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /preauth/on_submit:
-    post:
-      tags:
-        - Mock Service API's
-      description: Initiates a request to perform preauth on_submit
-      security:
-        - bearer_auth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestBody'
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  timestamp:
-                    type: string
-                    description: Represents the timestamp in epoch format
-                    example: "1706783290"
-                  correlation_id:
-                    type: string
-                    description: Unique Indentifier for request
-                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
-                  api_call_id:
-                    type: string
-                    description: Unique Identifier for API call Id
-                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
-        '400':
-          description: Client Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Downstream systems down/unhandled exceptions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
   /create/communication/request:
     post:
       tags:
@@ -1315,6 +1163,73 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  
+  /user/create:
+    post:
+      tags:
+      - User Management API's
+      summary: Create a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile:
+                  type: string
+                  description: The user's mobile number.
+                name:
+                  type: string
+                  description: The user's name.
+                address:
+                  type: string
+                  description: The user's address.
+                payor_details:
+                  type: object
+                  description: Additional details about the user's payor.
+                medical_history:
+                  type: object
+                  description: Information about the user's medical history.
+              required:
+                - mobile
+      responses:
+        '200':
+          description: Successful operation. Returns user information.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: integer
+                    format: int64
+                    description: The timestamp of the response.
+                  mobile:
+                    type: string
+                    description: The user's mobile number.
+                    
+  /user/search/{mobile}:
+    get:
+      tags:
+      - User Management API's
+      summary: Search for a user by mobile number.
+      parameters:
+        - in: path
+          name: mobile
+          required: true
+          schema:
+            type: string
+          description: The mobile number of the user to search for.
+      responses:
+        '200':
+          description: Successful operation. Returns user information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+                    
 
 components:
   schemas:
@@ -1679,6 +1594,24 @@ components:
         trace:
           type: string
           description: Long description supporting the Code
+    UserResponse:
+      type: object
+      properties:
+        userName:
+          type: string
+          description: The name of the user.
+        beneficiaryId:
+          type: string
+          description: The beneficiary ID of the user.
+        address:
+          type: string
+          description: The address of the user.
+        payorDetails:
+          type: object
+          description: Additional details about the user's payor.
+        medicalHistory:
+          type: object
+          description: Information about the user's medical history.  
 
   securitySchemes:
     bearer_auth:
