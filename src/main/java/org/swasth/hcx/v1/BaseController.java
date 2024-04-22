@@ -220,9 +220,10 @@ public class BaseController {
         String remarks = "";
         ClaimResponse cr = getResourceByType("ClaimResponse", ClaimResponse.class, fhirPayload);
         if (cr != null && cr.getProcessNote() != null) {
-            remarks = cr.getProcessNote().get(0).getText();
+            for (ClaimResponse.NoteComponent message : cr.getProcessNote()) {
+                remarks = message.getText();
+            }
         }
-        System.out.println("Remarks -----" + remarks);
         return remarks;
     }
 
