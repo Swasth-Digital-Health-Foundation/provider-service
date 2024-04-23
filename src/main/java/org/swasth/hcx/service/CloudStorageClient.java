@@ -31,11 +31,6 @@ public class CloudStorageClient {
                 .build();
     }
 
-    public void putObject(String folderName, String bucketName) {
-        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, folderName + "/", new ByteArrayInputStream(new byte[0]), new ObjectMetadata());
-        putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
-    }
-
     public void putObject(String bucketName, String folderName, MultipartFile content) throws IOException {
         ObjectMetadata md = new ObjectMetadata();
         md.setContentType(content.getContentType());

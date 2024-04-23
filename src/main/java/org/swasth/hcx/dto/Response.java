@@ -2,7 +2,6 @@ package org.swasth.hcx.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.swasth.hcx.dto.ResponseError;
 
 import java.util.HashMap;
 import java.util.List;

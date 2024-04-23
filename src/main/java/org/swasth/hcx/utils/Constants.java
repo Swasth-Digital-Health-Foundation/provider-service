@@ -38,6 +38,10 @@ public class Constants {
     public static final String CLAIM_ONSUBMIT =  "/claim/on_submit";
     public static final String CONSULTATION_ADD = "/consultation/add";
 
+    public static final String USER_CREATE = "/user/create";
+    public static final String USER_SEARCH = "/user/search/{mobile}";
+    public static final String USER_UPDATE = "/user/update";
+
     //Payment Notice APIs
     public static final String PAYMENT_NOTICE_REQUEST = VERSION_PREFIX + "/paymentnotice/request";
     public static final String PAYMENT_NOTICE_ONREQUEST = VERSION_PREFIX + "/paymentnotice/on_request";
@@ -92,7 +96,7 @@ public class Constants {
     public static final String API_CALL_ID = "x-hcx-api_call_id";
     public static final String CORRELATION_ID = "x-hcx-correlation_id";
     public static final String WORKFLOW_ID = "x-hcx-workflow_id";
-    public static final String TIMESTAMP = "x-hcx-timestamp";
+    public static final String TIMESTAMP = "timestamp";
     public static final String DEBUG_FLAG = "x-hcx-debug_flag";
     public static final String STATUS = "x-hcx-status";
     public static final String ERROR_DETAILS = "x-hcx-error_details";
