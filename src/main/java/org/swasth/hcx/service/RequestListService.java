@@ -27,7 +27,7 @@ public class RequestListService {
     @Value("${postgres.table.provider-system}")
     private String providerSystem;
 
-    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) throws SQLException {
+    public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) {
         String mobile = (String) requestBody.getOrDefault("mobile", "");
         logger.info("The request list for mobile {}", mobile );
         String app = (String) requestBody.getOrDefault("app", "");
@@ -46,8 +46,6 @@ public class RequestListService {
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            postgresService.close();
         }
     }
 
@@ -71,8 +69,6 @@ public class RequestListService {
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            postgresService.close();
         }
     }
 
@@ -92,8 +88,6 @@ public class RequestListService {
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception for debugging
             return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            postgresService.close();
         }
     }
 

@@ -10,13 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.swasth.hcx.dto.Response;
 import org.swasth.hcx.exception.ClientException;
-import org.swasth.hcx.service.PostgresService;
 import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.service.RequestListService;
 import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.v1.BaseController;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +30,6 @@ public class ProviderController extends BaseController {
     @Autowired
     private RequestListService requestListService;
 
-    @Autowired
-    private PostgresService postgresService;
     @Value("${phone.beneficiary-register}")
     private String beneficiaryRegisterContent;
 
@@ -93,7 +89,7 @@ public class ProviderController extends BaseController {
     }
 
     @PostMapping(REQUEST_LIST)
-    public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) throws SQLException {
+    public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) {
         try {
             if (requestBody.containsKey("mobile")) {
                 return requestListService.getRequestByMobile(requestBody);
@@ -106,20 +102,16 @@ public class ProviderController extends BaseController {
             }
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error: " + ex.getMessage());
-        } finally {
-            postgresService.close();
         }
     }
 
     @PostMapping(UPLOAD_DOCUMENTS)
-    public ResponseEntity<Object> uploadDocuments(@RequestParam("file") List<MultipartFile> files, @RequestParam("mobile") String mobile) throws SQLException {
+    public ResponseEntity<Object> uploadDocuments(@RequestParam("file") List<MultipartFile> files, @RequestParam("mobile") String mobile) {
         try {
             List<Map<String, Object>> responses = providerService.getDocumentUrls(files, mobile);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        } finally {
-            postgresService.close();
         }
     }
 

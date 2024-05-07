@@ -20,7 +20,6 @@ import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.utils.JSONUtils;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 @RestController
@@ -32,7 +31,7 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
 
     @PostMapping(Constants.USER_CREATE)
-    public ResponseEntity<Object> create(@RequestBody Map<String, Object> requestBody) throws SQLException {
+    public ResponseEntity<Object> create(@RequestBody Map<String, Object> requestBody) {
         try {
             logger.info("Creating user with request body {}", requestBody);
             User user = new User(requestBody);
@@ -47,13 +46,11 @@ public class UserController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
-        } finally {
-            postgres.close();
         }
     }
 
     @GetMapping(Constants.USER_SEARCH)
-    public ResponseEntity<Object> search(@PathVariable() String mobile) throws SQLException {
+    public ResponseEntity<Object> search(@PathVariable() String mobile) {
         try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
             logger.info("Searching user with mobile number {}", mobile);
             Map<String, Object> responseMap = new HashMap<>();
@@ -68,13 +65,11 @@ public class UserController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
-        } finally {
-            postgres.close();
         }
     }
 
     @PostMapping(Constants.USER_UPDATE)
-    public ResponseEntity<Object> update(@RequestBody Map<String, Object> requestBody) throws SQLException {
+    public ResponseEntity<Object> update(@RequestBody Map<String, Object> requestBody) {
         try {
             String mobile = (String) requestBody.getOrDefault("mobile", "");
             if (!requestBody.containsKey("mobile") && mobile.isEmpty()) {
@@ -88,8 +83,6 @@ public class UserController {
             return ResponseEntity.ok(Map.of(Constants.MOBILE, mobile));
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
-        } finally {
-            postgres.close();
         }
     }
 
