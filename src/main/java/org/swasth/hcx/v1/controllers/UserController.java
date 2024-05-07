@@ -51,10 +51,18 @@ public class UserController {
 
     @GetMapping(Constants.USER_SEARCH)
     public ResponseEntity<Object> search(@PathVariable() String mobile) {
-        try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
+        String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile);
+        try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
             logger.info("Searching user with mobile number {}", mobile);
-            Map<String, Object> responseMap = extractResultSetData(resultSet);
-            Response response = new Response(responseMap);
+            Map<String, Object> userResponse = new HashMap<>();
+            while (resultSet.next()) {
+                userResponse.put("userName", resultSet.getString("name"));
+                userResponse.put("beneficiaryId", resultSet.getString("beneficiary_id"));
+                userResponse.put("address", resultSet.getString("address"));
+                userResponse.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
+                userResponse.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+            }
+            Response response = new Response(userResponse);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
@@ -64,11 +72,11 @@ public class UserController {
     @PostMapping(Constants.USER_UPDATE)
     public ResponseEntity<Object> update(@RequestBody Map<String, Object> requestBody) {
         try {
-            String mobile = (String) requestBody.getOrDefault("mobile", "");
-            if (!requestBody.containsKey("mobile") && mobile.isEmpty()) {
+            String mobile = (String) requestBody.getOrDefault(Constants.MOBILE, "");
+            if (!requestBody.containsKey(Constants.MOBILE) && mobile.isEmpty()) {
                 throw new ClientException("Mobile number is mandatory to update the details");
             }
-            requestBody.remove("mobile");
+            requestBody.remove(Constants.MOBILE);
             StringBuilder updateQuery = buildUpdateQuery(requestBody);
             updateQuery.append(" WHERE mobile = '").append(mobile).append("'");
             postgres.execute(updateQuery.toString());
@@ -130,17 +138,5 @@ public class UserController {
         ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
         response.setError(error);
         return response;
-    }
-
-    private Map<String, Object> extractResultSetData(ResultSet resultSet) throws Exception {
-        Map<String, Object> responseMap = new HashMap<>();
-        while (resultSet.next()) {
-            responseMap.put("userName", resultSet.getString("name"));
-            responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
-            responseMap.put("address", resultSet.getString("address"));
-            responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
-            responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
-        }
-        return responseMap;
     }
 }
