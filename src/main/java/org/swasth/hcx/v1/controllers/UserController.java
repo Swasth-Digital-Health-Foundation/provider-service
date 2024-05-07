@@ -139,7 +139,7 @@ public class UserController {
             responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
             responseMap.put("address", resultSet.getString("address"));
             responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
-            responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), List.class));
+            responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
         }
         return responseMap;
     }
