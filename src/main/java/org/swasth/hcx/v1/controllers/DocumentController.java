@@ -28,7 +28,7 @@ public class DocumentController {
     private PostgresService postgres;
 
     @PostMapping(CONSULTATION_ADD)
-    public ResponseEntity<Object> addConsultationInfo(@RequestBody Map<String, Object> requestBody) throws ClientException {
+    public ResponseEntity<Object> addConsultationInfo(@RequestBody Map<String, Object> requestBody) throws ClientException, SQLException {
         String workflowId = (String) requestBody.getOrDefault("workflow_id", "");
         if (!requestBody.containsKey("workflow_id") && workflowId.isEmpty()) {
             throw new ClientException("Work flow id cannot be empty");
@@ -55,11 +55,13 @@ public class DocumentController {
             e.printStackTrace();
             Map<String, Object> responseMap = getResponse(workflowId, Constants.FAILED);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap); // Return a 500 Internal Server Error response
+        } finally {
+            postgres.close();
         }
     }
 
     @GetMapping("/consultation/{workflow_id}")
-    public ResponseEntity<Object> getConsultationInfo(@PathVariable("workflow_id") String workflowId) {
+    public ResponseEntity<Object> getConsultationInfo(@PathVariable("workflow_id") String workflowId) throws SQLException {
         try {
             Map<String, Object> consultationInfo = getConsultationInfoByWorkflowId(workflowId);
             if (consultationInfo != null) {
@@ -70,24 +72,28 @@ public class DocumentController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", "Unable to fetch the details" + e.getMessage()));
+        } finally {
+            postgres.close();
         }
     }
 
     public Map<String, Object> getConsultationInfoByWorkflowId(String workflowId) throws ClientException, SQLException {
         String searchQuery = String.format("SELECT * FROM %s WHERE workflow_id = '%s'", consultationInfoTable, workflowId);
-        ResultSet resultSet = postgres.executeQuery(searchQuery);
         Map<String, Object> consultationInfo = new HashMap<>();
-        if (resultSet.next()) {
-            consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
-            consultationInfo.put("service_type", resultSet.getString("service_type"));
-            consultationInfo.put("symptoms", resultSet.getString("symptoms"));
-            consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
-            consultationInfo.put("workflow_id", workflowId);
-        } else {
-            throw new ClientException("The Record does not exit for workflow id  : " + workflowId);
+        try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
+            if (resultSet.next()) {
+                consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
+                consultationInfo.put("service_type", resultSet.getString("service_type"));
+                consultationInfo.put("symptoms", resultSet.getString("symptoms"));
+                consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
+                consultationInfo.put("workflow_id", workflowId);
+            } else {
+                throw new ClientException("The Record does not exist for workflow id: " + workflowId);
+            }
         }
         return consultationInfo;
     }
+
 
     public Map<String, Object> getResponse(String workflowId, String status) {
         Map<String, Object> responseMap = new HashMap<>();
