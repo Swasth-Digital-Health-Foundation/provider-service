@@ -53,14 +53,7 @@ public class UserController {
     public ResponseEntity<Object> search(@PathVariable() String mobile) {
         try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
             logger.info("Searching user with mobile number {}", mobile);
-            Map<String, Object> responseMap = new HashMap<>();
-            while (resultSet.next()) {
-                responseMap.put("userName", resultSet.getString("name"));
-                responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
-                responseMap.put("address", resultSet.getString("address"));
-                responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
-                responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
-            }
+            Map<String, Object> responseMap = extractResultSetData(resultSet);
             Response response = new Response(responseMap);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -137,5 +130,17 @@ public class UserController {
         ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
         response.setError(error);
         return response;
+    }
+
+    private Map<String, Object> extractResultSetData(ResultSet resultSet) throws Exception {
+        Map<String, Object> responseMap = new HashMap<>();
+        while (resultSet.next()) {
+            responseMap.put("userName", resultSet.getString("name"));
+            responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
+            responseMap.put("address", resultSet.getString("address"));
+            responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), Map.class));
+            responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+        }
+        return responseMap;
     }
 }
