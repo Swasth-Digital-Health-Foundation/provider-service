@@ -55,7 +55,7 @@ public class UserController {
         try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
             logger.info("Searching user with mobile number {}", mobile);
             Map<String, Object> userResponse = new HashMap<>();
-            while (resultSet.next()) {
+            while (!resultSet.isClosed() && resultSet.next()) {
                 userResponse.put("userName", resultSet.getString("name"));
                 userResponse.put("beneficiaryId", resultSet.getString("beneficiary_id"));
                 userResponse.put("address", resultSet.getString("address"));
