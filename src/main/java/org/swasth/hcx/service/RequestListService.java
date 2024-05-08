@@ -7,8 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.swasth.hcx.dto.Response;
+import org.swasth.hcx.dto.ResponseError;
+import org.swasth.hcx.exception.ClientException;
+import org.swasth.hcx.exception.ErrorCodes;
+import org.swasth.hcx.exception.ServerException;
+import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.utils.Constants;
-
+    
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -45,7 +51,7 @@ public class RequestListService {
             Map<String, Object> resp = getEntries(groupedEntries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            return exceptionHandler(new Response(),e);
         }
     }
 
@@ -67,8 +73,7 @@ public class RequestListService {
             Map<String, Object> resp = getEntries(groupedEntries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            return exceptionHandler(new Response(),e);
         }
     }
 
@@ -86,8 +91,7 @@ public class RequestListService {
             resp.put("entries", entries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace(); // Log the exception for debugging
-            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            return exceptionHandler(new Response(),e);
         }
     }
 
@@ -161,5 +165,23 @@ public class RequestListService {
         } else {
             return Constants.PRE_AUTH;
         }
+    }
+
+    protected ResponseEntity<Object> exceptionHandler(Response response, Exception e) {
+        e.printStackTrace();
+        if (e instanceof ClientException) {
+            return new ResponseEntity<>(errorResponse(response, ((ClientException) e).getErrCode(), e), HttpStatus.BAD_REQUEST);
+        } else if (e instanceof ServiceUnavailbleException) {
+            return new ResponseEntity<>(errorResponse(response, ((ServiceUnavailbleException) e).getErrCode(), e), HttpStatus.SERVICE_UNAVAILABLE);
+        } else if (e instanceof ServerException) {
+            return new ResponseEntity<>(errorResponse(response, ((ServerException) e).getErrCode(), e), HttpStatus.INTERNAL_SERVER_ERROR);
+        } else {
+            return new ResponseEntity<>(errorResponse(response, ErrorCodes.INTERNAL_SERVER_ERROR, e), HttpStatus.INTERNAL_SERVER_ERROR);
+        }}
+
+    protected Response errorResponse(Response response, ErrorCodes code, java.lang.Exception e) {
+        ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
+        response.setError(error);
+        return response;
     }
 }
