@@ -1,5 +1,9 @@
 package org.swasth.hcx.v1.controllers;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.hcxprotocol.utils.Operations;
 import kong.unirest.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +17,12 @@ import org.swasth.hcx.exception.ClientException;
 import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.service.RequestListService;
 import org.swasth.hcx.utils.Constants;
+import org.swasth.hcx.utils.JSONUtils;
 import org.swasth.hcx.v1.BaseController;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +38,8 @@ public class ProviderController extends BaseController {
     @Autowired
     private RequestListService requestListService;
 
+    @Value("${procedures.file-path}")
+    private String proceduresFilePath;
     @Value("${phone.beneficiary-register}")
     private String beneficiaryRegisterContent;
 
@@ -134,4 +144,24 @@ public class ProviderController extends BaseController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/procedures/list/{procedure_name}")
+    public ResponseEntity<Object> getProcedures(@PathVariable("procedure_name") String procedureName) throws IOException {
+        try (FileReader reader = new FileReader(proceduresFilePath)) {
+            JsonElement jsonElement = JsonParser.parseReader(reader);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonArray conceptArray = jsonObject.getAsJsonArray("concept");
+            List<Map<String, Object>> matchedConcepts = new ArrayList<>();
+            for (JsonElement conceptElement : conceptArray) {
+                JsonObject conceptObject = conceptElement.getAsJsonObject();
+                if (conceptObject.get("display").getAsString().toLowerCase().startsWith(procedureName.toLowerCase()) || conceptObject.get("display").getAsString().equalsIgnoreCase(procedureName)) {
+                    matchedConcepts.add(JSONUtils.deserialize(conceptObject.toString(), Map.class));
+                }
+            }
+            return ResponseEntity.ok(new Response(matchedConcepts));
+        } catch (Exception e) {
+            return exceptionHandler(new Response(), e);
+        }
+    }
 }
+
