@@ -147,8 +147,9 @@ public class ProviderController extends BaseController {
 
     @GetMapping("/procedures/list/{procedure_name}")
     public ResponseEntity<Object> getProcedures(@PathVariable("procedure_name") String procedureName) throws IOException {
-        System.out.println("file path ---" + proceduresFilePath);
-        try (FileReader reader = new FileReader(proceduresFilePath)) {
+        String filePath = System.getProperty("user.dir") + "/src/main/resources/procedures.json";
+        System.out.println("filepath --" + filePath);
+        try (FileReader reader = new FileReader(filePath)) {
             JsonElement jsonElement = JsonParser.parseReader(reader);
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             JsonArray conceptArray = jsonObject.getAsJsonArray("concept");
