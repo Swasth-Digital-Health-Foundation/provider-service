@@ -49,4 +49,4 @@ otp:
   expiry: ${verification_otp_expiry:300000}
 
 procedures:
-  file-path: ${procedures_file_path:${user.dir}/src/main/resources/procedures.json}
+  file-path: ${procedures_file_path:${user.dir}src/main/resources/procedures.json}
