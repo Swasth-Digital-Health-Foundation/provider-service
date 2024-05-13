@@ -82,6 +82,9 @@ public class Request {
         return getHeader(RECIPIENT_CODE);
     }
 
+    public String getTimestamp() {
+        return getHeader(TIMESTAMP);
+    }
 
     public String getDebugFlag() {
         return getHeader(DEBUG_FLAG);

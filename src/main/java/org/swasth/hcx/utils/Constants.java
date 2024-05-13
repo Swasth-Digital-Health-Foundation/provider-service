@@ -16,19 +16,12 @@ public class Constants {
     public static final String CREATE_PRE_AUTH_SUBMIT = "/create/preauth/submit";
     public static final String CREATE_COMMUNICATION_REQUEST = "/create/communication/request";
     public static final String CREATE_COMMUNICATION_ON_REQUEST = "create/communication/on_request";
-
-    public static final String CHECK_COMMUNICATION_REQUEST = "/check/communication/request";
     public static final String COVERAGE_ELIGIBILITY = "coverageeligibility";
     public static final String COMMUNICATION = "communication";
     public static final String CLAIM = "claim";
     public static final String PRE_AUTH = "preauth";
     public static final String REQUEST_LIST = "/request/list";
     public static final String SEND_OTP = "/send/otp";
-    public static final String OTP = "otp";
-    public static final String BANK_DETAILS = "bank_details";
-    public static final String TYPE = "type";
-    public static final String ACCOUNT_NUMBER = "account_number";
-    public static final String IFSC_CODE = "ifsc_code";
     public static final String VERIFY_OTP = "verify/otp";
     public static final String UPLOAD_DOCUMENTS  = "/upload/documents";
     // Claims APIs
@@ -37,10 +30,6 @@ public class Constants {
     public static final String CLAIM_SUBMIT = "/claim/submit";
     public static final String CLAIM_ONSUBMIT =  "/claim/on_submit";
     public static final String CONSULTATION_ADD = "/consultation/add";
-
-    public static final String USER_CREATE = "/user/create";
-    public static final String USER_SEARCH = "/user/search/{mobile}";
-    public static final String USER_UPDATE = "/user/update";
 
     //Payment Notice APIs
     public static final String PAYMENT_NOTICE_REQUEST = VERSION_PREFIX + "/paymentnotice/request";
@@ -96,7 +85,7 @@ public class Constants {
     public static final String API_CALL_ID = "x-hcx-api_call_id";
     public static final String CORRELATION_ID = "x-hcx-correlation_id";
     public static final String WORKFLOW_ID = "x-hcx-workflow_id";
-    public static final String TIMESTAMP = "timestamp";
+    public static final String TIMESTAMP = "x-hcx-timestamp";
     public static final String DEBUG_FLAG = "x-hcx-debug_flag";
     public static final String STATUS = "x-hcx-status";
     public static final String ERROR_DETAILS = "x-hcx-error_details";

@@ -1,20 +1,12 @@
 package org.swasth.hcx.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.swasth.hcx.dto.Response;
-import org.swasth.hcx.dto.ResponseError;
-import org.swasth.hcx.exception.ClientException;
-import org.swasth.hcx.exception.ErrorCodes;
-import org.swasth.hcx.exception.ServerException;
-import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.utils.Constants;
-    
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -28,14 +20,11 @@ public class RequestListService {
     @Autowired
     PostgresService postgresService;
 
-    private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
-
     @Value("${postgres.table.provider-system}")
     private String providerSystem;
 
     public ResponseEntity<Object> getRequestByMobile(Map<String, Object> requestBody) {
         String mobile = (String) requestBody.getOrDefault("mobile", "");
-        logger.info("The request list for mobile {}", mobile );
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
         String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, mobile, app);
@@ -45,19 +34,19 @@ public class RequestListService {
                 if (!groupedEntries.containsKey(workflowId)) {
                     groupedEntries.put(workflowId, new ArrayList<>());
                 }
+                System.out.println("grouped entries size of mobile "  + groupedEntries.size());
                 Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
                 groupedEntries.get(workflowId).add(responseMap);
             }
             Map<String, Object> resp = getEntries(groupedEntries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            return exceptionHandler(new Response(),e);
+            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody) throws SQLException {
+    public ResponseEntity<Object> getRequestBySenderCode(Map<String, Object> requestBody) {
         String senderCode = (String) requestBody.getOrDefault("sender_code", "");
-        logger.info("The request list for sender code  {}", senderCode );
         String app = (String) requestBody.getOrDefault("app", "");
         Map<String, List<Map<String, Object>>> groupedEntries = new HashMap<>();
         String searchQuery = String.format("SELECT * FROM %s WHERE sender_code = '%s' AND app = '%s' ORDER BY created_on DESC LIMIT 20", providerSystem, senderCode, app);
@@ -68,17 +57,18 @@ public class RequestListService {
                     groupedEntries.put(workflowId, new ArrayList<>());
                 }
                 Map<String, Object> responseMap = getResponseMap(searchResultSet, workflowId);
+                System.out.println("grouped entries size of sender code "  + groupedEntries.size());
                 groupedEntries.get(workflowId).add(responseMap);
             }
             Map<String, Object> resp = getEntries(groupedEntries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            return exceptionHandler(new Response(),e);
+            e.printStackTrace();
+            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public ResponseEntity<Object> getRequestByWorkflowId(Map<String, Object> requestBody) throws SQLException {
-
+    public ResponseEntity<Object> getRequestByWorkflowId(Map<String, Object> requestBody) {
         String workflowId = (String) requestBody.getOrDefault("workflow_id", "");
         String app = (String) requestBody.getOrDefault("app", "");
         List<Map<String, Object>> entries = new ArrayList<>();
@@ -91,7 +81,8 @@ public class RequestListService {
             resp.put("entries", entries);
             return new ResponseEntity<>(resp, HttpStatus.OK);
         } catch (Exception e) {
-            return exceptionHandler(new Response(),e);
+            e.printStackTrace(); // Log the exception for debugging
+            return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -115,11 +106,6 @@ public class RequestListService {
             responseMap.put("supportingDocuments", searchResultSet.getString("supporting_documents"));
             responseMap.put("billAmount", searchResultSet.getString("bill_amount"));
             responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
-            responseMap.put("otpStatus", searchResultSet.getString("otp_status"));
-            responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
-            responseMap.put("accountNumber", searchResultSet.getString("account_number"));
-            responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
-            responseMap.put("remarks", searchResultSet.getString("remarks"));
         }
         responseMap.put("type", actionType);
         responseMap.put("status", searchResultSet.getString("status"));
@@ -151,11 +137,6 @@ public class RequestListService {
         responseMap.put("mobile", searchResultSet.getString("mobile"));
         responseMap.put("patientName", searchResultSet.getString("patient_name"));
         responseMap.put("approvedAmount", searchResultSet.getString("approved_amount"));
-        responseMap.put("otpStatus", searchResultSet.getString("otp_status"));
-        responseMap.put("bankStatus", searchResultSet.getString("bank_status"));
-        responseMap.put("accountNumber", searchResultSet.getString("account_number"));
-        responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
-        responseMap.put("remarks", searchResultSet.getString("remarks"));
         entries.add(responseMap);
     }
 
@@ -165,23 +146,5 @@ public class RequestListService {
         } else {
             return Constants.PRE_AUTH;
         }
-    }
-
-    protected ResponseEntity<Object> exceptionHandler(Response response, Exception e) {
-        e.printStackTrace();
-        if (e instanceof ClientException) {
-            return new ResponseEntity<>(errorResponse(response, ((ClientException) e).getErrCode(), e), HttpStatus.BAD_REQUEST);
-        } else if (e instanceof ServiceUnavailbleException) {
-            return new ResponseEntity<>(errorResponse(response, ((ServiceUnavailbleException) e).getErrCode(), e), HttpStatus.SERVICE_UNAVAILABLE);
-        } else if (e instanceof ServerException) {
-            return new ResponseEntity<>(errorResponse(response, ((ServerException) e).getErrCode(), e), HttpStatus.INTERNAL_SERVER_ERROR);
-        } else {
-            return new ResponseEntity<>(errorResponse(response, ErrorCodes.INTERNAL_SERVER_ERROR, e), HttpStatus.INTERNAL_SERVER_ERROR);
-        }}
-
-    protected Response errorResponse(Response response, ErrorCodes code, java.lang.Exception e) {
-        ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
-        response.setError(error);
-        return response;
     }
 }
