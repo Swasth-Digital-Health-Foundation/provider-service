@@ -58,11 +58,13 @@ public class UserController {
         }
     }
 
-    @GetMapping("/user/search/{mobile}")
-    public ResponseEntity<Object> search(@PathVariable() String mobile) {
-        try (ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile));) {
-            System.out.println("Searching user with mobile number " + mobile);
-            Map<String, Object> responseMap = new HashMap<>();
+    @PostMapping("/user/search")
+    public ResponseEntity<Object> search(@RequestBody Map<String, Object> requestBody) {
+        if(requestBody.isEmpty()){
+            System.out.println(requestBody);
+            try(ResultSet resultSet = postgres.executeQuery(String.format(" SELECT * FROM %s ", "patient_information"))) {
+                System.out.println("Fetching all data");
+                Map<String, Object> responseMap = new HashMap<>();
             while (resultSet.next()) {
                 responseMap.put("userName", resultSet.getString("name"));
                 responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
@@ -72,8 +74,26 @@ public class UserController {
             }
             Response response = new Response(responseMap);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return exceptionHandler(new Response(), e);
+            }catch (Exception e){
+                return exceptionHandler(new Response(), e);
+            }
+        }else {
+            String mobile = (String) requestBody.get("mobile");
+            try(ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile))) {
+                System.out.println("Fetching all data");
+                Map<String, Object> responseMap = new HashMap<>();
+                while (resultSet.next()) {
+                    responseMap.put("userName", resultSet.getString("name"));
+                    responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
+                    responseMap.put("address", resultSet.getString("address"));
+                    responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), Map.class));
+                    responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+                }
+                Response response = new Response(responseMap);
+                return ResponseEntity.ok(response);
+            }catch (Exception e){
+                return exceptionHandler(new Response(), e);
+            }
         }
     }
 

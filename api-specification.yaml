@@ -1229,6 +1229,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserResponse'
 
+  /user/search:
+    get:
+      tags:
+        - User Management API's
+      summary: Search for a user by mobile number.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile:
+                  type: string
+                  description: The user's mobile number.
+      responses:
+        '200':
+          description: Successful operation. Returns user information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
                     
 
 components:
