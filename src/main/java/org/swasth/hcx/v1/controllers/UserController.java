@@ -1,6 +1,7 @@
 package org.swasth.hcx.v1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.swasth.hcx.utils.JSONUtils;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,6 +29,8 @@ public class UserController {
     @Autowired
     private PostgresService postgres;
 
+    @Value("${postgres.table.patient-information}")
+    private String patientInformation;
 
     @PostMapping("/user/create")
     public ResponseEntity<Object> create(@RequestBody Map<String, Object> requestBody) {
@@ -59,42 +63,48 @@ public class UserController {
     }
 
     @PostMapping("/user/search")
-    public ResponseEntity<Object> search(@RequestBody Map<String, Object> requestBody) {
-        if(requestBody.isEmpty()){
-            System.out.println(requestBody);
-            try(ResultSet resultSet = postgres.executeQuery(String.format(" SELECT * FROM %s ", "patient_information"))) {
-                System.out.println("Fetching all data");
-                Map<String, Object> responseMap = new HashMap<>();
-            while (resultSet.next()) {
-                responseMap.put("userName", resultSet.getString("name"));
-                responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
-                responseMap.put("address", resultSet.getString("address"));
-                responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), Map.class));
-                responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
-            }
-            Response response = new Response(responseMap);
-            return ResponseEntity.ok(response);
-            }catch (Exception e){
-                return exceptionHandler(new Response(), e);
-            }
+    public ResponseEntity<Object> search(@RequestParam(required = false) String field) {
+        if(field != null && field.contains("mobile")){
+            return searchWithParam(field);
         }else {
-            String mobile = (String) requestBody.get("mobile");
-            try(ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile))) {
-                System.out.println("Fetching all data");
-                Map<String, Object> responseMap = new HashMap<>();
-                while (resultSet.next()) {
-                    responseMap.put("userName", resultSet.getString("name"));
-                    responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
-                    responseMap.put("address", resultSet.getString("address"));
-                    responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), Map.class));
-                    responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
-                }
-                Response response = new Response(responseMap);
-                return ResponseEntity.ok(response);
-            }catch (Exception e){
-                return exceptionHandler(new Response(), e);
-            }
+            return searchWithoutParam();
         }
+    }
+
+    protected ResponseEntity<Object> searchWithParam(String mobile){
+        try(ResultSet resultSet = postgres.executeQuery(String.format("SELECT * FROM %s WHERE mobile = '%s'", patientInformation, mobile))) {
+            Map<String,Object> responseData = new HashMap<>();
+            while (resultSet.next()) {
+               responseData = responseMap(resultSet);
+            }
+            Response response = new Response(responseData);
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            return exceptionHandler(new Response(), e);
+        }
+    }
+
+    protected ResponseEntity<Object> searchWithoutParam(){
+        try(ResultSet resultSet =  postgres.executeQuery(String.format(" SELECT * FROM %s ", patientInformation))) {
+            Map<String,Object> responseData = new HashMap<>();
+            while (resultSet.next()) {
+                responseData = responseMap(resultSet);
+            }
+            Response response = new Response(responseData);
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+             return exceptionHandler(new Response(), e);
+        }
+    }
+
+    protected Map<String ,Object> responseMap(ResultSet resultSet) throws Exception {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("userName", resultSet.getString("name"));
+        responseMap.put("beneficiaryId", resultSet.getString("beneficiary_id"));
+        responseMap.put("address", resultSet.getString("address"));
+        responseMap.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), Map.class));
+        responseMap.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+        return responseMap;
     }
 
     protected ResponseEntity<Object> exceptionHandler(Response response, Exception e) {
@@ -110,7 +120,7 @@ public class UserController {
         }
     }
 
-    protected Response errorResponse(Response response, ErrorCodes code, java.lang.Exception e) {
+    protected Response errorResponse(Response response, ErrorCodes code, Exception e) {
         ResponseError error = new ResponseError(code, e.getMessage(), e.getCause());
         response.setError(error);
         return response;
