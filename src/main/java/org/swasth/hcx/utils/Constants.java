@@ -39,7 +39,7 @@ public class Constants {
     public static final String CONSULTATION_ADD = "/consultation/add";
 
     public static final String USER_CREATE = "/user/create";
-    public static final String USER_SEARCH = "/user/search/{mobile}";
+    public static final String USER_SEARCH = "/user/search";
     public static final String USER_UPDATE = "/user/update";
 
     //Payment Notice APIs
