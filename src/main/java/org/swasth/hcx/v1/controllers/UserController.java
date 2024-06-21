@@ -1,5 +1,6 @@
 package org.swasth.hcx.v1.controllers;
 
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,20 +51,24 @@ public class UserController {
     }
 
     @GetMapping(Constants.USER_SEARCH)
-    public ResponseEntity<Object> search(@PathVariable() String mobile) {
+    public ResponseEntity<Object> search(@PathVariable String mobile) {
         String searchQuery = String.format("SELECT * FROM %s WHERE mobile = '%s'", "patient_information", mobile);
         try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
-            logger.info("Searching user with mobile number {}", mobile);
-            Map<String, Object> userResponse = new HashMap<>();
+            logger.info("Searching user(s) with mobile number {}", mobile);
+            List<Map<String, Object>> usersResponse = new ArrayList<>();
             while (resultSet.next()) {
+                Map<String, Object> userResponse = new HashMap<>();
                 userResponse.put("userName", resultSet.getString("name"));
                 userResponse.put("beneficiaryId", resultSet.getString("beneficiary_id"));
                 userResponse.put("address", resultSet.getString("address"));
+                userResponse.put("email", resultSet.getString("email"));
+                userResponse.put("gender", resultSet.getString("gender"));
+                userResponse.put("age", resultSet.getInt("age"));
                 userResponse.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
                 userResponse.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+                usersResponse.add(userResponse);
             }
-            Response response = new Response(userResponse);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(usersResponse);
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
         }
@@ -76,9 +81,15 @@ public class UserController {
             if (!requestBody.containsKey(Constants.MOBILE) && mobile.isEmpty()) {
                 throw new ClientException("Mobile number is mandatory to update the details");
             }
+            if(!requestBody.containsKey("beneficiary_id")){
+                throw new ClientException("Beneficiary id is mandatory to update the details");
+            }
+            String beneficiaryId = (String) requestBody.getOrDefault("beneficiary_id", "");
             requestBody.remove(Constants.MOBILE);
+            requestBody.remove("beneficiary_id");
             StringBuilder updateQuery = buildUpdateQuery(requestBody);
             updateQuery.append(" WHERE mobile = '").append(mobile).append("'");
+            updateQuery.append("AND beneficiary_id = '").append(beneficiaryId).append("'");
             postgres.execute(updateQuery.toString());
             logger.info("User updated successfully for mobile number: {}", mobile);
             return ResponseEntity.ok(Map.of(Constants.MOBILE, mobile));
@@ -88,9 +99,10 @@ public class UserController {
     }
 
     private void insertQuery(User user) throws JsonProcessingException, ClientException {
-        String insertQuery = String.format("INSERT INTO %s (name, beneficiary_id, mobile, address, payor_details, medical_history, created_on, updated_on)" +
-                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d, %d)", "patient_information",
-                user.getName(), UUID.randomUUID(), user.getMobile(), user.getAddress(), JSONUtils.serialize(user.getInsuranceDetails()), JSONUtils.serialize(user.getMedicalHistory()), System.currentTimeMillis(), System.currentTimeMillis());
+        String insertQuery = String.format("INSERT INTO %s (name, beneficiary_id, mobile, address, payor_details, medical_history, created_on, updated_on,email,gender,age)" +
+                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', %d)", "patient_information",
+                user.getName(), UUID.randomUUID(), user.getMobile(), user.getAddress(), JSONUtils.serialize(user.getInsuranceDetails()), JSONUtils.serialize(user.getMedicalHistory()), System.currentTimeMillis(), System.currentTimeMillis(), user.getEmail(), user.getGender(), user.getAge()
+        );
         postgres.execute(insertQuery);
     }
 

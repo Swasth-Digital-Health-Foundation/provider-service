@@ -14,6 +14,9 @@ public class User {
     public String name;
     public String address;
     public String mobile;
+    public String email ;
+    public String gender;
+    public Number age ;
     public List<Map<String, Object>> insuranceDetails;
     public Map<String, Object> medicalHistory;
 
@@ -56,4 +59,10 @@ public class User {
     public void setMobile(String mobile) {
         this.mobile = mobile;
     }
+    public String getEmail() { return (String) requestBody.getOrDefault("email", "");}
+    public void setEmail(String email) { this.email = email; }
+    public String getGender() { return (String) requestBody.getOrDefault("gender", ""); }
+    public void setGender(String gender) { this.gender = gender;}
+    public int getAge() {return (int) requestBody.getOrDefault("age", 0);}
+    public void setAge(Number age) { this.age = age; }
 }
