@@ -14,6 +14,7 @@ import org.swasth.hcx.exception.ErrorCodes;
 import org.swasth.hcx.exception.ServerException;
 import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.models.User;
+import org.swasth.hcx.service.AESEncryption;
 import org.swasth.hcx.service.PostgresService;
 import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.utils.Constants;
@@ -28,6 +29,11 @@ public class UserController {
 
     @Autowired
     private PostgresService postgres;
+    @Autowired
+    AESEncryption aesEncryption;
+
+    private final boolean encryption = false;
+
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
 
     @PostMapping(Constants.USER_CREATE)
@@ -56,11 +62,13 @@ public class UserController {
             logger.info("Searching user with mobile number {}", mobile);
             Map<String, Object> userResponse = new HashMap<>();
             while (resultSet.next()) {
+                String payor_details =aesEncryption.decrypt(resultSet.getString("payor_details"));
+                String medical_history = aesEncryption.decrypt(resultSet.getString("medical_history"));
                 userResponse.put("userName", resultSet.getString("name"));
                 userResponse.put("beneficiaryId", resultSet.getString("beneficiary_id"));
-                userResponse.put("address", resultSet.getString("address"));
-                userResponse.put("payorDetails", JSONUtils.deserialize(resultSet.getString("payor_details"), List.class));
-                userResponse.put("medicalHistory", JSONUtils.deserialize(resultSet.getString("medical_history"), Map.class));
+                userResponse.put("address", aesEncryption.decrypt(resultSet.getString("address")));
+                userResponse.put("payorDetails",JSONUtils.deserialize(payor_details, List.class));
+                userResponse.put("medicalHistory", JSONUtils.deserialize(medical_history, Map.class));
             }
             Response response = new Response(userResponse);
             return ResponseEntity.ok(response);
@@ -88,9 +96,16 @@ public class UserController {
     }
 
     private void insertQuery(User user) throws JsonProcessingException, ClientException {
+        Map<String,Object> medicalHistory = user.getMedicalHistory();
+        String mH = JSONUtils.serialize(medicalHistory);
+        String encryptedMH = aesEncryption.encrypt(mH);
+        List<Map<String,Object>> insuranceDetails = user.getInsuranceDetails();
+        System.out.println(insuranceDetails);
+        String iD = JSONUtils.serialize(insuranceDetails);
+        String insuranceDetail = aesEncryption.encrypt(iD);
         String insertQuery = String.format("INSERT INTO %s (name, beneficiary_id, mobile, address, payor_details, medical_history, created_on, updated_on)" +
                         "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d, %d)", "patient_information",
-                user.getName(), UUID.randomUUID(), user.getMobile(), user.getAddress(), JSONUtils.serialize(user.getInsuranceDetails()), JSONUtils.serialize(user.getMedicalHistory()), System.currentTimeMillis(), System.currentTimeMillis());
+                user.getName(), UUID.randomUUID(), user.getMobile(), aesEncryption.encrypt(user.getAddress()), insuranceDetail, encryptedMH, System.currentTimeMillis(), System.currentTimeMillis());
         postgres.execute(insertQuery);
     }
 
