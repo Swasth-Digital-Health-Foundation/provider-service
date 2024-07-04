@@ -50,3 +50,9 @@ otp:
 
 procedures:
   file-path: ${procedures_file_path:${user.dir}src/main/resources/procedures.json}
+
+cr:
+  crypto:
+    algo: ${CR_CRYPTO_ALGO:AES}
+    secret: ${CR_CRYPTO_SECRET:xafrY5Trwj9zOXQ/g/UgZnrsyNjAzp0MXzbzR5SqGLE=}
+    type: ${CR_CRYPTO_TYPE:SHA-256}
