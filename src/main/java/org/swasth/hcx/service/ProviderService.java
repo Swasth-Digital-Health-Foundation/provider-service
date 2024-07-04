@@ -2,6 +2,7 @@ package org.swasth.hcx.service;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import org.apache.commons.io.IOUtils;
@@ -141,6 +142,18 @@ public class ProviderService {
             if (StringUtils.equalsIgnoreCase(app, org.swasth.hcx.utils.Constants.ABSP)) {
                 addInputsBasedOnApp(requestBody, claim);
             }
+            if (requestBody.containsKey("diagnosis")){
+                List<Map<String,Object>> diagnosis = (List<Map<String, Object>>) requestBody.getOrDefault("diagnosis", new ArrayList<>());
+                for(Map<String,Object> diagnosisMap : diagnosis){
+                    claim.getDiagnosis().add(new Claim.DiagnosisComponent().addType(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/ex-diagnosistype").setCode("admitting").setDisplay("Admitting Diagnosis"))).setSequence(1).setDiagnosis(new CodeableConcept(new Coding().setSystem("http://irdai.com").setCode((String) diagnosisMap.getOrDefault("code","")).setDisplay((String) diagnosisMap.getOrDefault("display",""))).setText("SINGLE INCISION LAPAROSCOPIC APPENDECTOMY")));
+                }
+            }
+            if (requestBody.containsKey("items")){
+                List<Map<String,Object>> items = (List<Map<String, Object>>) requestBody.getOrDefault("items", new ArrayList<>());
+                for(Map<String,Object> itemsMap : items){
+                    claim.getItem().add(new Claim.ItemComponent().setSequence(1).setProductOrService(new CodeableConcept(new Coding().setSystem("https://irdai.gov.in/package-code").setCode((String) itemsMap.getOrDefault("code", "")).setDisplay((String) itemsMap.getOrDefault("display", "")))).setUnitPrice(new Money().setValue(2000).setCurrency("INR")));
+                }
+            }
             // Adding supporting Documents
             addSupportingDocuments(requestBody, claim);
             Practitioner practitioner = OnActionFhirExamples.practitionerExample();
@@ -148,6 +161,10 @@ public class ProviderService {
             hospital.setName((String) requestBody.getOrDefault("providerName", ""));
             Patient patient = OnActionFhirExamples.patientExample();
             String mobile = (String) requestBody.getOrDefault(Constants.MOBILE, "");
+            Address address = new Address();
+            address.setCity((String) requestBody.getOrDefault("address", ""));
+            patient.addAddress(address);
+
             patient.getTelecom().add(new ContactPoint().setValue(mobile).setSystem(ContactPoint.ContactPointSystem.PHONE));
             patient.getName().add(new HumanName().setText((String) requestBody.getOrDefault(PATIENT_NAME, "")));
             Organization insurerOrganization = OnActionFhirExamples.insurerOrganizationExample();

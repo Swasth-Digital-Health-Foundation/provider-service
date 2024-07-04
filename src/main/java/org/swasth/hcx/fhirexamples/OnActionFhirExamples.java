@@ -118,7 +118,6 @@ public class OnActionFhirExamples {
             throw new RuntimeException(e);
         }
         pat.setBirthDate(date);
-        pat.addAddress((new Address().setText("#39 Kalena Agrahara, Kamanahalli, Bengaluru - 560056").setCity("Bengaluru").setPostalCode("560056").setState("Karnataka").setCountry("India")));
         return pat;
     }
 
