@@ -145,13 +145,20 @@ public class ProviderService {
             if (requestBody.containsKey("diagnosis")){
                 List<Map<String,Object>> diagnosis = (List<Map<String, Object>>) requestBody.getOrDefault("diagnosis", new ArrayList<>());
                 for(Map<String,Object> diagnosisMap : diagnosis){
-                    claim.getDiagnosis().add(new Claim.DiagnosisComponent().addType(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/ex-diagnosistype").setCode("admitting").setDisplay("Admitting Diagnosis"))).setSequence(1).setDiagnosis(new CodeableConcept(new Coding().setSystem("http://irdai.com").setCode((String) diagnosisMap.getOrDefault("code","")).setDisplay((String) diagnosisMap.getOrDefault("display",""))).setText("SINGLE INCISION LAPAROSCOPIC APPENDECTOMY")));
+                    claim.getDiagnosis().add(new Claim.DiagnosisComponent().addType(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/ex-diagnosistype").setCode("admitting").setDisplay("Admitting Diagnosis"))).setSequence(1).setDiagnosis(new CodeableConcept(new Coding().setSystem("http://irdai.com").setCode((String) diagnosisMap.getOrDefault("value","")).setDisplay((String) diagnosisMap.getOrDefault("label",""))).setText((String) diagnosisMap.getOrDefault("label",""))));
                 }
             }
             if (requestBody.containsKey("items")){
                 List<Map<String,Object>> items = (List<Map<String, Object>>) requestBody.getOrDefault("items", new ArrayList<>());
                 for(Map<String,Object> itemsMap : items){
-                    claim.getItem().add(new Claim.ItemComponent().setSequence(1).setProductOrService(new CodeableConcept(new Coding().setSystem("https://irdai.gov.in/package-code").setCode((String) itemsMap.getOrDefault("code", "")).setDisplay((String) itemsMap.getOrDefault("display", "")))).setUnitPrice(new Money().setValue(2000).setCurrency("INR")));
+                    claim.getItem().add(new Claim.ItemComponent().setSequence(1).setProductOrService(new CodeableConcept(new Coding().setSystem("https://irdai.gov.in/package-code").setCode((String) itemsMap.getOrDefault("value", "")).setDisplay((String) itemsMap.getOrDefault("label", "")))).setUnitPrice(new Money().setValue(2000).setCurrency("INR")));
+                }
+            }
+
+            if (requestBody.containsKey("procedures")){
+                List<Map<String,Object>> items = (List<Map<String, Object>>) requestBody.getOrDefault("procedures", new ArrayList<>());
+                for(Map<String,Object> itemsMap : items){
+                    claim.getProcedure().add(new Claim.ProcedureComponent().setSequence(1).setProcedure(new CodeableConcept(new Coding().setCode((String) itemsMap.getOrDefault("value", "")).setDisplay((String) itemsMap.getOrDefault("label", "")).setSystem((String) itemsMap.getOrDefault("system", "")))));
                 }
             }
             // Adding supporting Documents
