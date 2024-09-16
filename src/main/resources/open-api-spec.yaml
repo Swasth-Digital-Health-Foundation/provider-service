@@ -1,0 +1,1687 @@
+openapi: 3.0.1
+info:
+  title: HCX Mock & Provider Service API's
+  description: >-
+    HCX Mockservice
+  version: "1.0.0"
+servers:
+  - url: "https://api.example.com"
+    description: Mock server
+tags:
+  - name: Mock Service API's
+    description: HCX Mock Service API's
+paths:
+  /coverageeligibility/check:
+    post:
+      tags:
+        - Provider Service API's
+      description: Generates coverage eligibility FHIR bundle with the given input and sends coverage eligibility requestto the payor.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreateCoverageEligibilityCheck'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /claim/submit:
+    post:
+      tags:
+        - Provider Service API's
+      description: Generates claim FHIR bundle with the given input and sends claim request to the payor.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreateClaimSubmit'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /preauth/submit:
+    post:
+      tags:
+        - Provider Service API's
+      description: Generates preauth FHIR bundle with the given input and sends preauth request to the payor.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreatePreAuthSubmit'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /coverageeligibility/on_check:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform coverage eligibility on_check
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /claim/on_submit:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform claim on_submit
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /preauth/on_submit:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to perform preauth on_submit
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBody'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /create/communication/request:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to create a communication request
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+                    type:
+                      type: string
+                      description: verification type otp or bank details
+                      example: otp
+                    recipientCode:
+                      type: string
+                      description: Machine generated/readable unique identifier of the participant on the HCX instance
+                      example: "pcpt02@HCX02"
+                    participantCode:
+                      type: string
+                      description: Machine generated/readable unique identifier of the participant on the HCX instance
+                      example: "pcpt01@HCX01"
+                    password:
+                      type: string
+                      description: A password is a confidential and secure sequence of characters used to authenticate and authorize access to a system, account, or resource.
+                      example: "adc@1"
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /create/communication/on_request:
+    post:
+      tags:
+        - Provider Service API's
+      description: Initiates a request to create communication on_request
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+                    type:
+                      type: string
+                      description: verification type otp or bank_details
+                      example: bank_deatils
+                    recipientCode:
+                      type: string
+                      description: Machine generated/readable unique identifier of the participant on the HCX instance
+                      example: "pcpt02@HCX02"
+                    participantCode:
+                      type: string
+                      description: Machine generated/readable unique identifier of the participant on the HCX instance
+                      example: "pcpt01@HCX01"
+                    password:
+                      type: string
+                      description: A password is a confidential and secure sequence of characters used to authenticate and authorize access to a system, account, or resource.
+                      example: "adc@1"
+                    mobile:
+                      type: string
+                      description: Primary mobile number
+                      example: "987654321"
+                    otp_code:
+                      type: string
+                      description: used for verification of mobile number of users
+                      example: "3214"
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /send/otp:
+    post:
+      tags:
+        - Mock Service API's
+        - Provider Service API's
+      description: This API is used to send an OTP to given mobile number which is used in the consent verification and BSP app login.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    mobile:
+                      type: string
+                      description: Primary mobile number
+                      example: "987654321"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /verify/otp:
+    post:
+      tags:
+        - Mock Service API's
+        - Provider Service API's
+      description: This API is used to verify the OTP,which will accept the mobile and otp code as a input and verifies.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    mobile:
+                      type: string
+                      description: Primary mobile number
+                      example: "987654321"
+                    otp_code:
+                      type: string
+                      description: used for verification of mobile number of users
+                      example: "3214"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  mobile:
+                    type: string
+                    description: Mobile number
+                    example: "9620499129"
+                  verification:
+                    type: string
+                    description:  verification
+                    example: "successful"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /check/communication/request:
+    post:
+      tags:
+        - Provider Service API's
+      description: This API is to check the consent verification and bank request intitation is sent by the payor and based on that we will open the consent and bank request details cards
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997b8f"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /upload/documents:
+    post:
+      tags:
+        - Provider Service API's
+      description: Initiates a request to upload documents.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+                    documentUrl:
+                      type: array
+                      items:
+                        type: object
+                        description: documents
+                        example: ["https://example.com/mock-url","https://example.com/mock-url"]
+                    mobile:
+                      type: string
+                      description: Primary mobile number
+                      example: "987654321"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /request/list:
+    post:
+      tags:
+        - Provider Service API's
+      description: Initiates a request to fetch the request list according to input.
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/mobile'
+                - $ref: '#/components/schemas/sender_code'
+                - $ref: '#/components/schemas/workflow_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description: Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /notification/list:
+    post:
+      tags:
+        - Mock Service API's
+        - Provider Service API's
+      description: Initiates a request to fetch the list of notifications according to input
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyWithRole'
+                - $ref: '#/components/schemas/RequestBodyWithParticipantCode'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description:  Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /consultation/add:
+    post:
+      tags:
+        - Provider Service API's
+      description: Initiates a request to add consultation details
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    workflow_id:
+                      type: string
+                      description: Unique identifier
+                      example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+                    treatment_type:
+                      type: string
+                      description: A concise expression of the observed medical manifestations or sensations reported by the patient
+                      example: "OPD"
+                    service_type:
+                      type: string
+                      description: The serviceType parameter denotes the specific category of service utilized by a participant.
+                      example: "consultation"
+                    symptoms:
+                      type: string
+                      description: A concise expression of the observed medical manifestations or sensations reported by the patient
+                      example: "fever"
+                  supporting_documents_url:
+                    type: array
+                    items:
+                    description: Supporting Documents are documents which are uploaded
+                    example: [""]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    description: Represents the timestamp in epoch format
+                    example: "1706783290"
+                  correlation_id:
+                    type: string
+                    description: Unique Indentifier for request
+                    example: "5e934f90-111d-4f0b-b016-c22d820674e4"
+                  api_call_id:
+                    type: string
+                    description:  Unique Identifier for API call Id
+                    example: "26b1060c-1e83-4600-9612-ea31e0ca5093"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /consultation/{workflow_id}:
+    get:
+      tags:
+        - Provider Service API's
+      summary: Returns a user details by workflow_id.
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          description: Unique Identifier
+          schema:
+            type : string
+            format: "7a549702-ddb2-4e72-ac21-438d1f"
+            minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symptoms:
+                    type: string
+                    description: Symptoms refer to observable or perceived signs that indicate the presence of a particular medical condition or disease
+                    example: "fever"
+                  service_type:
+                    type: string
+                    description: The serviceType parameter denotes the specific category of service utilized by a participant.
+                    example: "consultation"
+                  workflow_id:
+                    type: string
+                    description: Unique identifier
+                    example: "7a549702-ddb2-4e72-ac21-438d1f"
+                  treatment_type:
+                    type: string
+                    description: The type of medical treatment received by a patient.
+                    example: "OPD"
+                supporting_documents_url:
+                  type: array
+                  items:
+                  description: Supporting Documents are documents which are uploaded
+                  example: [""]
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/request/list:
+    post:
+      tags:
+        - Mock Service API's
+      description:  Initiates a request to list the payer request based on input
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CoverageEligibilityPayorRequestBody'
+                - $ref: '#/components/schemas/PreauthPayorRequestBody'
+                - $ref: '#/components/schemas/ClaimPayorRequestBody'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseBody'
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/claim/approve:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to approve the claim request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyForApprove'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique Identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/claim/reject:
+    post:
+      tags:
+        - Mock Service API's
+      description:  Initiates a request to reject claim request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyForReject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/preauth/approve:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to approve preauth request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyForApprove'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/preauth/reject:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to reject preauth request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyForReject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/response/update:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to update response from payer.
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+                    response_fhir:
+                      type: object
+                      description: Represents a FHIR Bundle, which is a collection of resources returned as a response.
+                      example: {"response fhir bundle"}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/coverageeligibility/approve:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to approve coverage eligibility request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RequestBodyForApprove'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payer/coverageeligibility/reject:
+    post:
+      tags:
+        - Mock Service API's
+      description: Initiates a request to reject coverage eligibility request from payer
+      security:
+        - bearer_auth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    request_id:
+                      type: string
+                      description: Unique identifier
+                      example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+                    recipient_code:
+                      type: string
+                      description: Machine generated/readable unique identifier of the participant on the HCX instance
+                      example: "pcpt02@HCX02"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Unique identifier
+                    example: "9537fcef-7ce5-444d-8b7e-87dde997s8f2"
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Downstream systems down/unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateCoverageEligibilityCheck:
+      type: object
+      additionalProperties: false
+      properties:
+        providerName:
+          type: string
+          description: Human readable name for the participant
+          example: "testname"
+        participant_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+        serviceType:
+          type: string
+          description: The serviceType parameter denotes the specific category of service utilized by a participant
+          example: "medical"
+        mobile:
+          type: string
+          example: "9899912323"
+          description: Primary mobile number for claims related communication.
+        payor:
+          type: string
+          description: Human readable name for the participant
+          example: "test payor"
+        insuranceId:
+          type: string
+          description: The insuranceId is a alphanumeric string that uniquely identifies a specific insurance policy.
+          example: "1234567"
+        patientName:
+          type: string
+          description: Human readable name for patient
+          example: "testname"
+        app:
+          type: string
+          description: App
+          example: "app"
+        billAmount:
+          type: string
+          description: Total amount taken for processing
+          example: "23456"
+        recipientCode:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        password:
+          type: string
+          description: A password is a confidential and secure sequence of characters used to authenticate and authorize access to a system, account, or resource.
+          example: "abc@123"
+    CreateClaimSubmit:
+      type: object
+      additionalProperties: false
+      properties:
+        providerName:
+          type: string
+          description: Human readable name for the participant
+          example: "testname"
+        participant_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+        serviceType:
+          type: string
+          description: The serviceType parameter denotes the specific category of service utilized by a participant
+          example: "medical"
+        mobile:
+          type: string
+          example: "9899912323"
+          description: Primary mobile number for claims related communication.
+        payor:
+          type: string
+          description: Human readable name for the participant
+          example: "test payor"
+        insuranceId:
+          type: string
+          description: The insuranceId is a alphanumeric string that uniquely identifies a specific insurance policy.
+          example: "1234567"
+        patientName:
+          type: string
+          description: Human readable name for patient
+          example: "testname"
+        app:
+          type: string
+          description: App
+          example: "app"
+        billAmount:
+          type: string
+          description: Total amount of process
+          example: "23456"
+        supportingDocuments:
+          type: array
+          items:
+            description: Documents like Bill amount, Aadhar etc
+            example: ["http//123.com"]
+        recipientCode:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        password:
+          type: string
+          description: A password is a confidential and secure sequence of characters used to authenticate and authorize access to a system, account, or resource.
+          example: "abc@123"
+    CreatePreAuthSubmit:
+      type: object
+      additionalProperties: false
+      properties:
+        providerName:
+          type: string
+          description: Human readable name for the participant
+          example: "testname"
+        participantCode:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+        serviceType:
+          type: string
+          description:  The serviceType parameter denotes the specific category of service utilized by a participant
+          example: "medical"
+        mobile:
+          type: string
+          example: "9899912323"
+          description: Primary mobile number for claims related communication.
+        payor:
+          type: string
+          description: Human readable name for the participant
+          example: "test payor"
+        insuranceId:
+          type: string
+          description: The insuranceId is a alphanumeric string that uniquely identifies a specific insurance policy.
+          example: "1234567"
+        patientName:
+          type: string
+          description: Human readable name for patient
+          example: "testname"
+        app:
+          type: string
+          description: App
+          example: "app"
+        billAmount:
+          type: string
+          description: Total amount of process
+          example: "23456"
+        recipientCode:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        password:
+          type: string
+          description: A password is a confidential and secure sequence of characters used to authenticate and authorize access to a system, account, or resource.
+          example: "abc@123"
+    mobile:
+      type: object
+      additionalProperties: false
+      properties:
+        mobile:
+          type: string
+          example: "9899912323"
+          description: Primary mobile number for claims related communication.
+        app:
+          type: string
+          description: App
+          example: "ABSP"
+    sender_code:
+      type: object
+      additionalProperties: false
+      properties:
+        sender_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+        app:
+          type: string
+          description: App
+          example: "ABSP"
+    workflow_id:
+      type: object
+      additionalProperties: false
+      properties:
+        workflow_id:
+          type: string
+          description: Unique identifier
+          example: "pcpt01@HCX01"
+        app:
+          type: string
+          description: App
+          example: "ABSP"
+    RequestBody:
+      type: object
+      additionalProperties: false
+      properties:
+        payload:
+          type: string
+          description: JWT token
+          example: "eyJ4LWhjeC1yZWNpcGllbnRfY29kZSI6ImJzcF9ic3Byb2xfODQ2NzMwQHN3YXN0aC1oY3gtZGV2IiwieC1oY3gtdGltZXN0YW1wIjoiMjAyNC0wMS0yNFQwNjoxNzowNiswMDAwIiwieC1oY3gtc2VuZGVyX2NvZGUiOiJwYXlyX2hjeG1vY185MDM1ODhAc3dhc3RoLWhjeC1kZXYiLCJ4LWhjeC1jb3JyZWxhdGlvbl9pZCI6ImE4YjFjNzE3LWFlZWMtNDVlZS05Y2FlLWU5MWRDaPN2UFk5SnNFgExH9tEUcKAS41Ku-3Ee7t6QqpBRjqsQFcW6edPQ6koBFldsTeLM7g5-WiOn6DgdnKb7WuzabaiE9cvvIzOee9bEBSZ6r65R8HHDta6ydoPvr6hzD758bIdBK61OIrz4go9mYH44ddx4paXAz0nv9FIwWu27CftYDvszWOAeZ_vD_MvBGZOTExzmc_0muL_eQ-wRvC7FWooCI6pe4gUt4kcH3rsXDW3FCNvFB4SoT7BzlNawqgFym7kuJRbV0FsbZrX8qWZLWxbMbcSg.2Np6CQa0ajggs1kBhOdGLg"
+    RequestBodyWithRole:
+      type: object
+      additionalProperties: false
+      properties:
+        participant_role:
+          type: string
+          description: Roles assigned to the participant as per the definition in the domain specifications. This will be used for access control.
+          example: "bsp"
+    RequestBodyWithParticipantCode:
+      type: object
+      additionalProperties: false
+      properties:
+        participant_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+    CoverageEligibilityPayorRequestBody:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          description: The type of action or authorization process.
+          example: "coverageeligibility"
+        recipient_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        sender_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt01@HCX01"
+        days:
+          type: integer
+          description: days
+          example: 10
+    PreauthPayorRequestBody:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          description: The type of action or authorization process.
+          example: "preauth"
+        recipient_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        days:
+          type: integer
+          description: days
+          example: 10
+    ClaimPayorRequestBody:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          description: The type of action or authorization process.
+          example: "preauth"
+        recipient_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+        days:
+          type: integer
+          description: days
+          example: 10
+    RequestBodyForApprove:
+      type: object
+      additionalProperties: false
+      properties:
+        request_id:
+          type: string
+          description: Unique identifier
+          example: "3730d51b-7371-4d34-8641-a005dad"
+        type:
+          type: string
+          description: The type of action or authorization process.
+          example: "medical"
+        approved_amount:
+          type: integer
+          description: Total amount processed
+          example: 2345
+        recipient_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+    RequestBodyForReject:
+      type: object
+      additionalProperties: false
+      properties:
+        request_id:
+          type: string
+          description: Unique Identifier
+          example: "3730d51b-7371-4d34-8641-a005dad"
+        type:
+          type: string
+          description: The type of action or authorization process.
+          example: "medical"
+        recipient_code:
+          type: string
+          description: Machine generated/readable unique identifier of the participant on the HCX instance
+          example: "pcpt02@HCX02"
+    ResponseBody:
+      required:
+        - timestamp
+      type: object
+      properties:
+        count:
+          type: integer
+          description: number of time the api was called
+          example: 1
+        coverageeligibility:
+          type: array
+          items:
+            type: object
+            properties:
+              ifsc_code:
+                type: string
+                description: Bank code
+                example: "1234"
+              app:
+                type: string
+                description: App
+                example: "ABSP"
+              account_number:
+                type: string
+                description: Total amount of process
+                example: "1234"
+              response_fhir:
+                type: object
+                description: Response fhir bundle is the data sent by provider
+                example: {}
+    ResponseEnvelope:
+      required:
+        - timestamp
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: Represents the timestamp in epoch format
+          example: "1629057611000"
+    ErrorResponse:
+      required:
+        - error
+        - timestamp
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: Represents the timestamp in epoch format
+          example: "1629057611000"
+        error:
+          $ref: '#/components/schemas/Error'
+      description: This is a response to the ClaimForm API call
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: error code from the system - expected to be namespaced for better readability
+        message:
+          type: string
+          description: Short description of the error
+        trace:
+          type: string
+          description: Long description supporting the Code
+
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

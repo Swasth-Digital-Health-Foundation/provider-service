@@ -44,13 +44,20 @@ public class ProviderService {
     @Value("${hcx_application.protocol-base-path}")
     private String protocolBasePath;
     @Value("${postgres.table.provider-system}")
-    private String providerService;
+    private String providerServiceTable;
     @Value("${aws-url.bucketName}")
     private String bucketName;
     @Autowired
     private PostgresService postgres;
     @Autowired
     private CloudStorageClient cloudStorageClient;
+    @Autowired
+    private SMSService smsService;
+    @Value("${postgres.table.beneficiary}")
+    private String beneficiaryTable;
+
+    @Value("${otp.expiry}")
+    private int otpExpiry;
     IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
 
     private static final Logger logger = LoggerFactory.getLogger(ProviderService.class);
@@ -182,7 +189,7 @@ public class ProviderService {
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the claim request :");
             }
-            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action, supportingDocumentsUrl.isEmpty() ?  "ARRAY[]::character varying[]" : supportingDocumentsUrl);
+            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action, supportingDocumentsUrl.isEmpty() ? "ARRAY[]::character varying[]" : supportingDocumentsUrl);
             System.out.println("The outgoing request has been successfully generated.");
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);
@@ -193,11 +200,85 @@ public class ProviderService {
         }
     }
 
-    private void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
-        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents ) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s]);",
-                providerService, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents);
+    public ResponseEntity<Object> createCommunicationOnRequest(Map<String, Object> requestBody) throws Exception {
+        String requestId = (String) requestBody.getOrDefault("request_id", "");
+        String participantCode = (String) requestBody.getOrDefault("participantCode", "");
+        validateKeys("participantCode", participantCode);
+        String password = (String) requestBody.getOrDefault("password", "");
+        validateKeys("password", password);
+        String recipientCode = (String) requestBody.getOrDefault("recipientCode", "");
+        validateKeys("recipientCode", recipientCode);
+        if (StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "otp")) {
+            ResponseEntity<Object> responseEntity = verifyOTP(requestBody);
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                processOutgoingCallbackCommunication("otp", requestId, (String) requestBody.get("otp_code"), "", "", participantCode, password);
+            } else {
+                throw new ClientException(Objects.requireNonNull(responseEntity.getBody()).toString());
+            }
+            return responseEntity;
+        } else if(StringUtils.equalsIgnoreCase((String) requestBody.get("type"), "bank_details")){
+            String accountNumber = (String) requestBody.getOrDefault("account_number", "");
+            String ifscCode = (String) requestBody.getOrDefault("ifsc_code", "");
+            String query = String.format("UPDATE %s SET account_number ='%s',ifsc_code = '%s', bank_status = '%s' WHERE request_id = '%s'", providerServiceTable, accountNumber, ifscCode, "successful", requestId);
+            postgres.execute(query);
+            System.out.println("The bank details updated successfully to the request id " + requestId);
+            processOutgoingCallbackCommunication("bank_details", requestId, "", accountNumber, ifscCode, participantCode, password);
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        }
+        return ResponseEntity.badRequest().body("Unable to update the details to database");
+    }
+
+    public void processOutgoingCallbackCommunication(String type, String requestId, String otpCode, String accountNumber, String ifscCode, String participantCode, String password) throws Exception {
+        Communication communication;
+        List<DomainResource> domList = new ArrayList<>();
+        HCXIntegrator hcxIntegrator = HCXIntegrator.getInstance(initializingConfigMap(participantCode, password));
+        if (type.equalsIgnoreCase("otp")) {
+            communication = OnActionFhirExamples.communication();
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(otpCode)));
+        } else {
+            communication = OnActionFhirExamples.communication();
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(accountNumber)));
+            communication.getPayload().add(new Communication.CommunicationPayloadComponent().setContent(new StringType().setValue(ifscCode)));
+        }
+        IParser parser = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
+        Bundle bundleTest = new Bundle();
+        try {
+            bundleTest = HCXFHIRUtils.resourceToBundle(communication, domList, Bundle.BundleType.COLLECTION, "https://ig.hcxprotocol.io/v0.7.1/StructureDefinition-CommunicationBundle.html",hcxIntegrator);
+            System.out.println("resource To Bundle communication Request\n" + parser.encodeResourceToString(bundleTest));
+        } catch (Exception e) {
+            System.out.println("Error message " + e.getMessage());
+            throw new ClientException(e.getMessage());
+        }
+        String searchCorrelationIdQuery =  String.format("SELECT correlation_id FROM %s WHERE request_id = '%s'",providerServiceTable, requestId);
+        ResultSet resultSet = postgres.executeQuery(searchCorrelationIdQuery);
+        String correlationId = "";
+        while (resultSet.next()){
+            correlationId = resultSet.getString("correlation_id");
+        }
+        String searchActionJweQuery = String.format("SELECT raw_payload from %s where correlation_id = '%s' AND action = 'communication'", providerServiceTable, correlationId);
+        ResultSet resultSet1 = postgres.executeQuery(searchActionJweQuery);
+        String rawPayload = "";
+        while (resultSet1.next()){
+            rawPayload = resultSet1.getString("raw_payload");
+        }
+        Map<String, Object> outputMap = new HashMap<>();
+        if(type.equalsIgnoreCase("otp")){
+            updateOtpAndBankStatus("otp_status", correlationId);
+        } else if (type.equalsIgnoreCase("bank_details")) {
+            updateOtpAndBankStatus("bank_status", correlationId);
+        }
+        hcxIntegrator.processOutgoingCallback(parser.encodeResourceToString(bundleTest), Operations.COMMUNICATION_ON_REQUEST, "", rawPayload, "response.complete", new HashMap<>(), outputMap);
+    }
+
+    public void insertRecords(String participantCode, String recipientCode, String billAmount, String app, String mobile, String insuranceId, String workflowId, String apiCallId, String correlationId, String reqFhir, String patientName, String action, String documents) throws ClientException {
+        String query = String.format("INSERT INTO %s (request_id,sender_code,recipient_code,raw_payload,request_fhir,response_fhir,action,status,correlation_id,workflow_id, insurance_id, patient_name, bill_amount, mobile, app, created_on, updated_on, approved_amount,supporting_documents,otp_status,bank_status,account_number,ifsc_code) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',ARRAY[%s],'%s','%s','%s','%s');",
+                providerServiceTable, apiCallId, participantCode, recipientCode, "", reqFhir, "", action, PENDING, correlationId, workflowId, insuranceId, patientName, billAmount, mobile, app, System.currentTimeMillis(), System.currentTimeMillis(), "", documents, PENDING, PENDING, "", "");
         postgres.execute(query);
         System.out.println("Inserted the request details into the Database : " + apiCallId);
+    }
+    public void updateOtpAndBankStatus(String type, String correlationId) throws ClientException {
+        String updateStatus = String.format("UPDATE %s SET %s = 'successful' WHERE correlation_id = '%s'", providerServiceTable, type, correlationId);
+        postgres.execute(updateStatus);
     }
 
     protected void validateKeys(String field, String value) throws ClientException {
@@ -297,5 +378,77 @@ public class ProviderService {
             responses.add(response);
         }
         return responses;
+    }
+
+    public void sendOTP(String mobile, String phoneContent) throws ClientException, SQLException {
+        try {
+            int otpCode = 100_000 + new Random().nextInt(900_000);
+            String query = String.format("SELECT * FROM %s WHERE mobile = '%s'", "beneficiary_verification", mobile);
+            ResultSet resultSet = postgres.executeQuery(query);
+            if (!resultSet.next()) {
+                String beneficiaryReferenceId = String.valueOf(UUID.randomUUID());
+                String insertQuery = String.format("INSERT INTO %s (mobile, otp_code, mobile_verified, createdon, otp_expiry, bsp_reference_id) VALUES ('%s', %d, false, %d, %d, '%s')", beneficiaryTable, mobile, otpCode, System.currentTimeMillis(), System.currentTimeMillis() + otpExpiry, beneficiaryReferenceId);
+                postgres.execute(insertQuery);
+                smsService.sendSMS(mobile, phoneContent + "\r\n" + otpCode);
+                System.out.println("OTP sent successfully for " + mobile);
+            } else {
+                String updateQuery = String.format("UPDATE %s SET otp_code = %d, otp_expiry = %d , mobile_verified = %b WHERE mobile = '%s'", beneficiaryTable, otpCode, System.currentTimeMillis() + otpExpiry, false, mobile);
+                postgres.execute(updateQuery);
+                smsService.sendSMS(mobile, phoneContent + "\r\n" + otpCode);
+                System.out.println("OTP sent successfully for " + mobile);
+            }
+        } catch (ClientException e) {
+            throw new ClientException(e.getMessage());
+        }
+    }
+
+
+    public ResponseEntity<Object> verifyOTP(Map<String, Object> requestBody) {
+        try {
+            String mobile = (String) requestBody.get(Constants.MOBILE);
+            int userEnteredOTP = Integer.parseInt((String) requestBody.get("otp_code"));
+            String query = String.format("SELECT * FROM %s WHERE mobile = '%s'", beneficiaryTable, mobile);
+            ResultSet resultSet = postgres.executeQuery(query);
+            if (resultSet.next()) {
+                boolean isMobileVerified = resultSet.getBoolean("mobile_verified");
+                int storedOTP = resultSet.getInt("otp_code");
+                long otpExpire = resultSet.getLong("otp_expiry");
+                if (isMobileVerified) {
+                    return ResponseEntity.badRequest().body(response("Mobile Number already verified", mobile, "failed"));
+                }
+                if (userEnteredOTP != storedOTP || System.currentTimeMillis() > otpExpire) {
+                    throw new ClientException("Invalid OTP or OTP has expired");
+                }
+                // Update mobile_verified status
+                String updateQuery = String.format("UPDATE %s SET mobile_verified = true WHERE mobile = '%s'", beneficiaryTable, mobile);
+                postgres.execute(updateQuery);
+                return ResponseEntity.ok().body(response("verification is successful", mobile, "successful"));
+            } else {
+                return ResponseEntity.badRequest().body(response("Record does not exist in the database", mobile, "failed"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    public Map<String, Object> response(String message, String mobile, String verification) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", message);
+        response.put("mobile", mobile);
+        response.put("verification", verification);
+        return response;
+    }
+
+    public Map<String, Object> getCommunicationStatus(Map<String, Object> requestBody) throws ClientException, SQLException {
+        String requestId = (String) requestBody.get("request_id");
+        String query = String.format("SELECT otp_status,bank_status FROM %s WHERE request_id = '%s'", providerServiceTable, requestId);
+        ResultSet resultSet = postgres.executeQuery(query);
+        Map<String, Object> status = new HashMap<>();
+        if (!resultSet.next()) {
+            throw new ClientException("Claim Request Id Does not exist in the database");
+        }
+        status.put("otpStatus", resultSet.getString("otp_status"));
+        status.put("bankStatus", resultSet.getString("bank_status"));
+        return status;
     }
 }

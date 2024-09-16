@@ -3,12 +3,17 @@ package org.swasth.hcx.v1.controllers;
 import io.hcxprotocol.utils.Operations;
 import kong.unirest.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.swasth.hcx.dto.Response;
 import org.swasth.hcx.exception.ClientException;
+import org.swasth.hcx.exception.ErrorCodes;
+import org.swasth.hcx.exception.ServerException;
+import org.swasth.hcx.exception.ServiceUnavailbleException;
 import org.swasth.hcx.service.ProviderService;
 import org.swasth.hcx.service.RequestListService;
 import org.swasth.hcx.utils.Constants;
@@ -28,6 +33,9 @@ public class ProviderController extends BaseController {
 
     @Autowired
     private RequestListService requestListService;
+
+    @Value("${phone.beneficiary-register}")
+    private String beneficiaryRegisterContent;
 
     @PostMapping(COVERAGE_ELIGIBILITY_CHECK)
     public ResponseEntity<Object> createCoverageEligibility(@RequestHeader HttpHeaders headers, @RequestBody Map<String, Object> requestBody) throws Exception {
@@ -59,15 +67,40 @@ public class ProviderController extends BaseController {
         return processAndValidateRequest(requestBody, PRE_AUTH_SUBMIT, PRE_AUTH_ONSUBMIT);
     }
 
+    @PostMapping(COMMUNICATION_REQUEST)
+    public ResponseEntity<Object> processCommunicationRequest(@RequestBody Map<String, Object> requestBody) {
+        return processAndValidateRequest(requestBody, COMMUNICATION_REQUEST, COMMUNICATION);
+    }
+
+    @PostMapping(CREATE_COMMUNICATION_ON_REQUEST)
+    public ResponseEntity<Object> createOnCommunication(@RequestBody Map<String, Object> requestBody) throws Exception {
+        return providerService.createCommunicationOnRequest(requestBody);
+    }
+
+    @PostMapping(CHECK_COMMUNICATION_REQUEST)
+    public ResponseEntity<Object> checkCommunicationRequest(@RequestBody Map<String, Object> requestBody) {
+        Response response = new Response();
+        try {
+            if (requestBody.isEmpty() || !requestBody.containsKey("request_id")) {
+                throw new ClientException("Request body is empty or request_id is missing");
+            }
+            Map<String, Object> communicationStatus = providerService.getCommunicationStatus(requestBody);
+            response.setResult(communicationStatus);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return exceptionHandler(response, e);
+        }
+    }
+
     @PostMapping(REQUEST_LIST)
     public ResponseEntity<Object> requestList(@RequestBody Map<String, Object> requestBody) {
         try {
             if (requestBody.containsKey("mobile")) {
-                return requestListService.getRequestByMobile(requestBody);
+                return requestListService.getRequestBySenderCode(requestBody, "mobile");
             } else if (requestBody.containsKey("workflow_id")) {
                 return requestListService.getRequestByWorkflowId(requestBody);
             } else if (requestBody.containsKey("sender_code")) {
-                return requestListService.getRequestBySenderCode(requestBody);
+                return requestListService.getRequestBySenderCode(requestBody, "sender_code");
             } else {
                 throw new ClientException("Please provide valid request body");
             }
@@ -81,6 +114,26 @@ public class ProviderController extends BaseController {
         try {
             List<Map<String, Object>> responses = providerService.getDocumentUrls(files, mobile);
             return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping(SEND_OTP)
+    public ResponseEntity<Object> sendOTP(@RequestBody Map<String, Object> requestBody) {
+        try {
+            String mobile = (String) requestBody.get(MOBILE);
+            providerService.sendOTP(mobile, beneficiaryRegisterContent);
+            return ResponseEntity.ok(Map.of("message", "OTP sent successfully", "mobile", mobile));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping(VERIFY_OTP)
+    public ResponseEntity<Object> verifyOTP(@RequestBody Map<String, Object> requestBody) {
+        try {
+            return providerService.verifyOTP(requestBody);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

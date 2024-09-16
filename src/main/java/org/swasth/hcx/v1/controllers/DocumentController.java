@@ -72,16 +72,20 @@ public class DocumentController {
 
     public Map<String, Object> getConsultationInfoByWorkflowId(String workflowId) throws ClientException, SQLException {
         String searchQuery = String.format("SELECT * FROM %s WHERE workflow_id = '%s'", consultationInfoTable, workflowId);
-        ResultSet resultSet = postgres.executeQuery(searchQuery);
         Map<String, Object> consultationInfo = new HashMap<>();
-        if (resultSet.next()) {
-            consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
-            consultationInfo.put("service_type", resultSet.getString("service_type"));
-            consultationInfo.put("symptoms", resultSet.getString("symptoms"));
-            consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
-            consultationInfo.put("workflow_id", workflowId);
-        } else {
-            throw new ClientException("The Record does not exit for workflow id  : " + workflowId);
+        try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
+            boolean found = false;
+            while (resultSet.next()) {
+                consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
+                consultationInfo.put("service_type", resultSet.getString("service_type"));
+                consultationInfo.put("symptoms", resultSet.getString("symptoms"));
+                consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
+                consultationInfo.put("workflow_id", workflowId);
+                found = true;
+            }
+            if (!found) {
+                throw new ClientException("No consultation info found for workflow id: " + workflowId);
+            }
         }
         return consultationInfo;
     }
