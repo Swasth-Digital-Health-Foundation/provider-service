@@ -17,19 +17,19 @@ postgres:
 
 #hcx base url
 hcx_application:
-  url: ${hcx_gateway_url:http://dev-hcx.swasth.app}
+  url: ${hcx_gateway_url:http://staging-hcx.swasth.app}
   api_version: ${version:v0.7}
   token_url: ${auth_url:${hcx_application.url}/auth/realms/swasth-hcx-participants/protocol/openid-connect/token}
   registry_url: ${registry:${hcx_application.url}/api/v0.7/participant/search}
-  protocol-base-path: ${protocol_base_path:https://dev-hcx.swasth.app/api/v0.8}
+  protocol-base-path: ${protocol_base_path:https://staging-hcx.swasth.app/api/v0.8}
 
 autoresponse: ${auto_response:false}
 
 provider:
   private_key: ${provider_private_key:https://raw.githubusercontent.com/Swasth-Digital-Health-Foundation/hcx-platform/main/hcx-apis/src/test/resources/examples/test-keys/private-key.pem}
-  username: ${provider_username:hosp_demoho_82194121@swasth-hcx-dev}
-  password: ${provider_password:Opensaber@123}
-  participant_code: ${provider_participant_code:hosp_demoho_82194121@swasth-hcx-dev}
+  username: ${provider_username:hosp_saurab_87111477@swasth-hcx-staging}
+  password: ${provider_password:OfJsi5c7Afsc1BVW2JqRWQsHN}
+  participant_code: ${provider_participant_code:hosp_saurab_87111477@swasth-hcx-staging}
 
 aws-url:
   accessKey: ${url_accessKey:}

@@ -156,7 +156,7 @@ public class ProviderController extends BaseController {
             List<Map<String, Object>> matchedConcepts = new ArrayList<>();
             for (JsonElement conceptElement : conceptArray) {
                 JsonObject conceptObject = conceptElement.getAsJsonObject();
-                if (conceptObject.get("display").getAsString().toLowerCase().startsWith(procedureName.toLowerCase()) || conceptObject.get("display").getAsString().equalsIgnoreCase(procedureName)) {
+                if (conceptObject.get("display").getAsString().toLowerCase().contains(procedureName.toLowerCase()) || conceptObject.get("display").getAsString().equalsIgnoreCase(procedureName)) {
                     matchedConcepts.add(JSONUtils.deserialize(conceptObject.toString(), Map.class));
                 }
             }

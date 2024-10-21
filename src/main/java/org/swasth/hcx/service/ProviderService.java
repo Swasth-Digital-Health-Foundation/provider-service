@@ -149,9 +149,22 @@ public class ProviderService {
                 }
             }
             if (requestBody.containsKey("items")){
+
                 List<Map<String,Object>> items = (List<Map<String, Object>>) requestBody.getOrDefault("items", new ArrayList<>());
-                for(Map<String,Object> itemsMap : items){
-                    claim.getItem().add(new Claim.ItemComponent().setSequence(1).setProductOrService(new CodeableConcept(new Coding().setSystem((String) itemsMap.getOrDefault("system", "")).setCode((String) itemsMap.getOrDefault("value", "")).setDisplay((String) itemsMap.getOrDefault("label", "")))).setUnitPrice(new Money().setValue(2000).setCurrency("INR")));
+                String amountItems = (String) requestBody.getOrDefault("amountItems", 0);
+                ArrayList<String> amountList = new ArrayList<>(Arrays.asList(amountItems.split(",")));
+                for(int i=0; i < items.size(); i++){
+                    Map<String, Object> itemsMap = items.get(i);
+                    // Get the amount for this item, handle any parsing errors gracefully
+                    long amount = 0; // Default value if parsing fails
+                    if (i < amountList.size()) {
+                        try {
+                            amount = Long.parseLong(amountList.get(i).trim());
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing amount for index " + i + ": " + e.getMessage());
+                        }
+                    }
+                    claim.getItem().add(new Claim.ItemComponent().setSequence(1).setProductOrService(new CodeableConcept(new Coding().setSystem((String) itemsMap.getOrDefault("system", "")).setCode((String) itemsMap.getOrDefault("value", "")).setDisplay((String) itemsMap.getOrDefault("label", "")))).setUnitPrice(new Money().setValue(amount).setCurrency("INR")));
                 }
             }
 
