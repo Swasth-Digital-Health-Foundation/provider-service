@@ -33,17 +33,20 @@ public class DocumentController {
         if (!requestBody.containsKey("workflow_id") && workflowId.isEmpty()) {
             throw new ClientException("Work flow id cannot be empty");
         }
-        List<String> supportingDocumentsUrls = (List<String>) requestBody.getOrDefault("supporting_documents_url", new ArrayList<>());
-        String supportingDocuments = supportingDocumentsUrls.stream()
-                .map(document -> "'" + document + "'")
-                .collect(Collectors.joining(","));
+        String supportingDocumentsUrl = "";
+        if(requestBody.containsKey("supporting_documents_url")) {
+            List<String> supportingDocumentsUrls = (List<String>) requestBody.getOrDefault("supporting_documents_url", new ArrayList<>());
+            supportingDocumentsUrl = supportingDocumentsUrls.stream()
+                    .map(document -> "'" + document + "'")
+                    .collect(Collectors.joining(","));
+        }
         String insertQuery = String.format("INSERT INTO %s (workflow_id, treatment_type, " +
                         "service_type, symptoms, supporting_documents_url) VALUES ('%s', '%s', '%s', '%s', ARRAY[%s])",
                 consultationInfoTable, workflowId,
                 requestBody.getOrDefault("treatment_type", ""),
                 requestBody.getOrDefault("service_type", ""),
                 requestBody.getOrDefault("symptoms", ""),
-                supportingDocuments);
+                supportingDocumentsUrl.isEmpty() ? "ARRAY[]::character varying[]" : supportingDocumentsUrl);
         try {
             postgres.execute(insertQuery);
             Map<String, Object> responseMap = getResponse(workflowId, Constants.SUCCESSFUL);
@@ -72,19 +75,21 @@ public class DocumentController {
 
     public Map<String, Object> getConsultationInfoByWorkflowId(String workflowId) throws ClientException, SQLException {
         String searchQuery = String.format("SELECT * FROM %s WHERE workflow_id = '%s'", consultationInfoTable, workflowId);
-        ResultSet resultSet = postgres.executeQuery(searchQuery);
         Map<String, Object> consultationInfo = new HashMap<>();
-        if (resultSet.next()) {
-            consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
-            consultationInfo.put("service_type", resultSet.getString("service_type"));
-            consultationInfo.put("symptoms", resultSet.getString("symptoms"));
-            consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
-            consultationInfo.put("workflow_id", workflowId);
-        } else {
-            throw new ClientException("The Record does not exit for workflow id  : " + workflowId);
+        try (ResultSet resultSet = postgres.executeQuery(searchQuery)) {
+            if (resultSet.next()) {
+                consultationInfo.put("treatment_type", resultSet.getString("treatment_type"));
+                consultationInfo.put("service_type", resultSet.getString("service_type"));
+                consultationInfo.put("symptoms", resultSet.getString("symptoms"));
+                consultationInfo.put("supporting_documents_url", resultSet.getString("supporting_documents_url"));
+                consultationInfo.put("workflow_id", workflowId);
+            } else {
+                throw new ClientException("The Record does not exist for workflow id: " + workflowId);
+            }
         }
         return consultationInfo;
     }
+
 
     public Map<String, Object> getResponse(String workflowId, String status) {
         Map<String, Object> responseMap = new HashMap<>();
