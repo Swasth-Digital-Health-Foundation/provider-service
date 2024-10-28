@@ -4,3 +4,5 @@ target
 .idea/compiler.xml
 .idea
 provider-service.iml
+
+src/main/java/org/swasth/hcx/config/CorsConfig.java
