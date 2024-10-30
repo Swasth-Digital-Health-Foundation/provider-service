@@ -1,5 +1,6 @@
 package org.swasth.hcx.v1.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -20,11 +21,12 @@ import org.swasth.hcx.utils.Constants;
 import org.swasth.hcx.utils.JSONUtils;
 import org.swasth.hcx.v1.BaseController;
 
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.io.Resource;
 
 import static org.swasth.hcx.utils.Constants.*;
 
@@ -42,6 +44,15 @@ public class ProviderController extends BaseController {
     private String proceduresFilePath;
     @Value("${phone.beneficiary-register}")
     private String beneficiaryRegisterContent;
+
+    @Value("classpath:procedures.json")
+    private Resource proceduresFile;
+
+    private ObjectMapper objectMapper;
+
+    public ProviderController(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @PostMapping(COVERAGE_ELIGIBILITY_CHECK)
     public ResponseEntity<Object> createCoverageEligibility(@RequestHeader HttpHeaders headers, @RequestBody Map<String, Object> requestBody) throws Exception {
@@ -146,20 +157,26 @@ public class ProviderController extends BaseController {
     }
 
     @GetMapping("/procedures/list/{procedure_name}")
-    public ResponseEntity<Object> getProcedures(@PathVariable("procedure_name") String procedureName) throws IOException {
-        String filePath = System.getProperty("user.dir") + "/src/main/resources/procedures.json";
-        System.out.println("filepath --" + filePath);
-        try (FileReader reader = new FileReader(filePath)) {
+    public ResponseEntity<Object> getProcedures(@PathVariable("procedure_name") String procedureName) {
+        try (Reader reader = new InputStreamReader(proceduresFile.getInputStream())) {
             JsonElement jsonElement = JsonParser.parseReader(reader);
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             JsonArray conceptArray = jsonObject.getAsJsonArray("concept");
+
             List<Map<String, Object>> matchedConcepts = new ArrayList<>();
             for (JsonElement conceptElement : conceptArray) {
                 JsonObject conceptObject = conceptElement.getAsJsonObject();
-                if (conceptObject.get("display").getAsString().toLowerCase().contains(procedureName.toLowerCase()) || conceptObject.get("display").getAsString().equalsIgnoreCase(procedureName)) {
-                    matchedConcepts.add(JSONUtils.deserialize(conceptObject.toString(), Map.class));
+                String displayName = conceptObject.get("display").getAsString();
+
+                // Check if the procedure name matches or contains the search term
+                if (displayName.toLowerCase().contains(procedureName.toLowerCase()) ||
+                        displayName.equalsIgnoreCase(procedureName)) {
+                    // Convert JSON to Map and add to matched concepts
+                    Map<String, Object> conceptMap = objectMapper.readValue(conceptObject.toString(), Map.class);
+                    matchedConcepts.add(conceptMap);
                 }
             }
+
             return ResponseEntity.ok(new Response(matchedConcepts));
         } catch (Exception e) {
             return exceptionHandler(new Response(), e);
