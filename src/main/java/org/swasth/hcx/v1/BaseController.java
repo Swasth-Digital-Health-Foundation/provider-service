@@ -83,7 +83,7 @@ public class BaseController {
         String fhirPayload = (String) output.getOrDefault("fhirPayload", "");
         CommunicationRequest cr = parser.parseResource(CommunicationRequest.class, fhirPayload);
         String communicationType = cr.getPayload().get(0).getId();
-        if (communicationType.equalsIgnoreCase("otp_verification")) {
+        if (communicationType == null || communicationType.equalsIgnoreCase("otp_verification")) {
             updateBasedOnType("otp_status", req.getCorrelationId());
         } else if (communicationType.equalsIgnoreCase("bank_verification")) {
             updateBasedOnType("bank_status", req.getCorrelationId());
