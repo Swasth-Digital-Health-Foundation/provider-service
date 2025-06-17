@@ -180,13 +180,14 @@ public class ProviderService {
             Organization hospital = OnActionFhirExamples.providerOrganizationExample();
             hospital.setName((String) requestBody.getOrDefault("providerName", ""));
             Patient patient = OnActionFhirExamples.patientExample();
+            String patientName = (String) requestBody.getOrDefault(PATIENT_NAME, "");
             String mobile = (String) requestBody.getOrDefault(Constants.MOBILE, "");
             Address address = new Address();
             address.setCity((String) requestBody.getOrDefault("address", ""));
             patient.addAddress(address);
 
             patient.getTelecom().add(new ContactPoint().setValue(mobile).setSystem(ContactPoint.ContactPointSystem.PHONE));
-            patient.getName().add(new HumanName().setText((String) requestBody.getOrDefault(PATIENT_NAME, "")));
+            patient.getName().add(new HumanName().setText(patientName));
             Organization insurerOrganization = OnActionFhirExamples.insurerOrganizationExample();
             insurerOrganization.setName((String) requestBody.getOrDefault("payor", ""));
             Coverage coverage = OnActionFhirExamples.coverageExample();
@@ -226,7 +227,7 @@ public class ProviderService {
             if (!outgoingRequest) {
                 throw new ClientException("Exception while generating the claim request :");
             }
-            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, "", action, supportingDocumentsUrl.isEmpty() ? "ARRAY[]::character varying[]" : supportingDocumentsUrl);
+            insertRecords(participantCode, recipientCode, billAmount, app, mobile, insuranceId, workflowId, apiCallId, correlationId, reqFhir, patientName, action, supportingDocumentsUrl.isEmpty() ? "ARRAY[]::character varying[]" : supportingDocumentsUrl);
             System.out.println("The outgoing request has been successfully generated.");
             Map<String, Object> response1 = ResponseMap(workflowId, participantCode, recipientCode);
             return new ResponseEntity<>(response1, HttpStatus.ACCEPTED);

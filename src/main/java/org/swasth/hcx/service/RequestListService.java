@@ -125,6 +125,7 @@ public class RequestListService {
         responseMap.put("status", searchResultSet.getString("status"));
         responseMap.put("apiCallId", searchResultSet.getString("request_id"));
         responseMap.put("claimType", "OPD");
+        responseMap.put("requestFhir", searchResultSet.getString("request_fhir"));
         responseMap.put("date", searchResultSet.getString("created_on"));
         responseMap.put("insurance_id", searchResultSet.getString("insurance_id"));
         responseMap.put("correlationId", searchResultSet.getString("correlation_id"));
@@ -156,6 +157,7 @@ public class RequestListService {
         responseMap.put("accountNumber", searchResultSet.getString("account_number"));
         responseMap.put("ifscCode", searchResultSet.getString("ifsc_code"));
         responseMap.put("remarks", searchResultSet.getString("remarks"));
+        responseMap.put("requestFhir", searchResultSet.getString("request_fhir"));
         entries.add(responseMap);
     }
 
